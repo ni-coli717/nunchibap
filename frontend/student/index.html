@@ -9,8 +9,6 @@
 <style>
 /* 레이아웃: 폰에서는 전체 화면, 넓은 화면에서는 390×844 폰 틀을 가운데에 놓는다 */
 :root{--paper:#F4F3EF;--ink:#111111;--white:#FFFFFF;--yellow:#FFE14D;--grey:#555555;--line:#111111;--mute:#6B6B6B;--red:#B42318;--tape:rgba(226,219,198,.9);--stripe:repeating-linear-gradient(135deg,#FFFFFF 0px,#FFFFFF 7px,#C9C9C9 7px,#C9C9C9 8.5px);--desk:#E7E5DE;--sans:'Noto Sans KR',Arial,sans-serif;--mono:'IBM Plex Mono','Courier New',monospace}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--desk:#1C1C1A;color-scheme:dark}}
-:root[data-theme="dark"]{--desk:#1C1C1A;color-scheme:dark}
 html,body{height:100%}
 body{margin:0;background:var(--desk);color:var(--ink);font-family:var(--sans);font-size:14px;-webkit-font-smoothing:antialiased}
 *{box-sizing:border-box}
@@ -58,6 +56,38 @@ html,body,#root{height:100%}
 @media (min-width:1280px){.dw-body{grid-template-columns:440px minmax(0,760px);gap:32px}}
 @media (min-width:1600px){.dw-body{grid-template-columns:480px minmax(0,880px);padding:32px 48px}}
 @media (max-width:1100px){.da{grid-template-columns:minmax(0,1fr) 400px;gap:40px;padding:24px 32px}.da-brand h1{font-size:80px}}
+
+/* ---------- 어두운 바깥 (조작 화면만 밝게) ----------
+   html.look-dark : 바깥 배경·브랜드·상단바가 어둡고, 카드/패널/폰 화면만 종이색
+   html.look-anim : 밝은 화면 → 어두운 화면 전환 애니메이션 */
+html.look-dark{--desk:#161615}
+html.look-dark body{background:var(--desk)}
+html.look-dark .da-brand h1,html.look-dark .da-brand>.mono{color:#F4F3EF}
+html.look-dark .da-brand>svg path{stroke:#F4F3EF}
+html.look-dark .da-brand>svg rect[y="80"]{fill:#F4F3EF}
+html.look-dark .da-steps{background:transparent;border-color:#F4F3EF}
+html.look-dark .da-steps div{border-color:#F4F3EF;color:#F4F3EF}
+html.look-dark .da-steps .s{color:#B9B8B2}
+html.look-dark .da-card,html.look-dark .m-desk .phone{border-color:#F4F3EF;box-shadow:0 0 0 1px #000,10px 12px 0 rgba(0,0,0,.45)}
+html.look-dark .dw-top{background:#111;color:#F4F3EF;border-bottom-color:#2E2E2C}
+html.look-dark .dw-brand svg g{stroke:#F4F3EF;fill:#111}
+html.look-dark .dw-brand svg rect[fill="#111"]{fill:#F4F3EF}
+html.look-dark .dw-brand .mono,html.look-dark .dw-me{color:#B9B8B2}
+html.look-dark .dw-me b{color:#F4F3EF}
+html.look-dark .dw-nav button{border-color:#3A3A38;color:#F4F3EF}
+html.look-dark .dw-nav button[aria-current="page"]{background:var(--yellow);color:var(--ink)}
+html.look-dark .dw-me button{border-color:var(--yellow)}
+html.look-dark .pane{border-color:#F4F3EF}
+html.look-anim body,html.look-anim .da-brand h1,html.look-anim .da-brand>.mono,html.look-anim .da-steps,html.look-anim .da-steps div,html.look-anim .da-steps .s{transition:background-color .9s ease,color .9s ease,border-color .9s ease}
+html.look-anim .da-brand>svg path,html.look-anim .da-brand>svg rect{transition:stroke .9s ease,fill .9s ease}
+/* 처음 1초: 브랜드만 크게, 카드는 아직 밖에 */
+html.look-intro .da{grid-template-columns:minmax(0,1fr) 0px;gap:0}
+html.look-intro .da-card{opacity:0;transform:translateX(60px)}
+html.look-anim .da{transition:grid-template-columns .8s cubic-bezier(.2,.8,.2,1),gap .8s cubic-bezier(.2,.8,.2,1)}
+html.look-anim .da-card{transition:opacity .6s ease .35s,transform .7s cubic-bezier(.2,.8,.2,1) .35s}
+html.look-intro .da-brand{margin-left:max(0px,calc(50% - 300px));transform:scale(1.06);transform-origin:50% 50%}
+html.look-anim .da-brand{transition:transform .9s cubic-bezier(.2,.8,.2,1),margin-left .8s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion: reduce){html.look-anim *{transition:none!important}}
 
 /* 모션 */
 @keyframes nbIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -147,6 +177,32 @@ html,body,#root{height:100%}
 <script>
 (function () {
   'use strict';
+  /* 화면 분위기: ?look=a(항상 밝게) b(바깥 어둡게) c(밝게 시작 → 어둡게) d(기기 설정 따름, 다크면 c) */
+  (function () {
+    var q = {}; try { location.search.replace(/^\?/, '').split('&').forEach(function (kv) { var p = kv.split('='); if (p[0]) q[p[0]] = decodeURIComponent(p[1] || ''); }); } catch (e) { /* 무시 */ }
+    var look = q.look || window.NB_LOOK || 'd';
+    var dark = look === 'b' || look === 'c' || (look === 'd' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+    var animate = look === 'c' || (look === 'd' && dark);
+    var root = document.documentElement;
+    var seen = false; try { seen = sessionStorage.getItem('nb.intro') === '1'; } catch (e) { seen = false; }
+    if (q.replay) seen = false;
+    if (dark && animate && !seen && window.innerWidth >= 1024) {
+      root.classList.add('look-intro');
+      setTimeout(function () {
+        root.classList.add('look-anim');
+        requestAnimationFrame(function () { root.classList.add('look-dark'); root.classList.remove('look-intro'); });
+        setTimeout(function () { root.classList.remove('look-anim'); }, 1600);
+        try { sessionStorage.setItem('nb.intro', '1'); } catch (e) { /* 무시 */ }
+      }, 1300);
+    } else if (dark) root.classList.add('look-dark');
+    /* 미리보기용(서버 없이): ?preview=splash | home — 저장하지 않고 메모리에서만 */
+    if (q.preview) {
+      NBSync.active = false;
+      NB.setPersist(function () { /* 저장 안 함 */ });
+      var s0 = NB.hydrate(null);
+      if (q.preview === 'home') s0.user = { email: 's25012@masong.hs.kr', grade: '2', cls: '3', name: '박유건', points: 15, notif1: true, notif2: true, introDone: true, createdAt: new Date().toISOString() };
+    }
+  })();
   var S = NB.load();
   /* 화면 상태 (저장하지 않음) */
   var ui = { screen: S.user && S.user.introDone ? 'home' : 'splash', email: '', code: '', grade: '2', cls: '3', name: '', intro: 0, introFrom: 'signup', picked: null, rec: false, fb: { ate: '예', timing: '예약대로', bucket: null }, fbOut: {}, justSent: false, toast: null, invite: false, inviteName: '', editDay: null, privacy: false };

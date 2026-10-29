@@ -40,7 +40,7 @@
     onRender: function (fn) { listeners.push(fn); },
     /* rerender(first, args) 는 서버 상태를 받은 뒤 화면을 다시 그리는 함수 */
     init: function (rerender) {
-      if (!inFrame || started) return false;
+      if (!Sync.active || started) return false;
       started = true;
       NB.setPersist(function (s) {
         var snap = snapshot(s), any = false;
