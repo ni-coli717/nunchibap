@@ -188,12 +188,21 @@ html.look-anim .da-brand{transition:transform .9s cubic-bezier(.2,.8,.2,1),margi
     if (q.replay) seen = false;
     if (dark && animate && !seen && window.innerWidth >= 1024) {
       root.classList.add('look-intro');
-      setTimeout(function () {
-        root.classList.add('look-anim');
-        requestAnimationFrame(function () { root.classList.add('look-dark'); root.classList.remove('look-intro'); });
-        setTimeout(function () { root.classList.remove('look-anim'); }, 1600);
+      /* 로그인한 학생(가입 카드가 없는 화면)은 기다리지 않고 바로 어두운 화면 */
+      var t0 = 0;
+      var tick = setInterval(function () {
+        var onAuth = !!document.querySelector('.da');
+        var loggedIn = !!document.querySelector('.dw');
+        if (onAuth && !t0) t0 = Date.now();
+        if (!loggedIn && (!onAuth || Date.now() - t0 < 1300)) return;
+        clearInterval(tick);
         try { sessionStorage.setItem('nb.intro', '1'); } catch (e) { /* 무시 */ }
-      }, 1300);
+        if (loggedIn) { root.classList.remove('look-intro'); root.classList.add('look-dark'); return; }
+        root.classList.add('look-anim');
+        void root.offsetWidth; /* 전환 시작점을 확정 */
+        setTimeout(function () { root.classList.add('look-dark'); root.classList.remove('look-intro'); }, 20);
+        setTimeout(function () { root.classList.remove('look-anim'); }, 1700);
+      }, 100);
     } else if (dark) root.classList.add('look-dark');
     /* 미리보기용(서버 없이): ?preview=splash | home — 저장하지 않고 메모리에서만 */
     if (q.preview) {
