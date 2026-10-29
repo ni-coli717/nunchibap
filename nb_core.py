@@ -35,7 +35,7 @@ def defaults() -> dict:
             "endTimes": {"1": "12:10", "2": "12:10", "3": "12:05"},
             "menu": {"name": "치킨마요덮밥", "pop": 9},
             "weather": "맑음", "event": False,
-            "aiWeeks": 8, "aiMode": "자동", "responseRate": 0.64,
+            "aiWeeks": 8, "aiMode": "자동", "responseRate": 0.64, "demo": True,
             "savedAt": None,
         },
         "user": None,

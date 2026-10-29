@@ -63,8 +63,118 @@ div[data-baseweb="select"]>div{border:2px solid #111111!important;border-radius:
 """
 
 
-def inject() -> None:
+PHONE_CSS = """
+<style>
+.block-container{max-width:440px!important;padding:0 20px 120px!important}
+header[data-testid="stHeader"]{display:none}
+[data-testid="stHeaderActionElements"],.stMarkdown a.anchor-link{display:none!important}
+[data-testid="stMarkdownContainer"]{margin-bottom:0!important}
+[data-testid="stHorizontalBlock"]{flex-wrap:nowrap!important}
+[data-testid="stColumn"]{min-width:0!important}
+[class*="st-key-code_in"] input{font-size:30px!important;letter-spacing:14px;font-weight:600;padding:10px 14px}
+.ph-sw{position:relative;flex:none;width:52px;height:30px;border:2px solid #111;box-sizing:border-box}
+.ph-sw i{position:absolute;top:3px;width:20px;height:20px}
+[data-testid="stVerticalBlock"]{gap:.6rem}
+/* 화면 머리 */
+.ph-head{margin:0 -20px 14px;padding:18px 20px 12px;border-bottom:2px solid #111}
+.ph-head h1{font-size:24px;margin:2px 0 4px;line-height:1.25}
+.ph-head .sub{font-size:12px;color:#555}
+.ph-head .eye{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#555;display:flex;justify-content:space-between}
+.ph-red{color:#B42318!important;font-weight:700}
+/* 눌리는 타일: HTML 위에 투명 버튼 */
+[class*="st-key-tile_"]{position:relative;gap:0!important}
+[class*="st-key-tile_"] > div:has(> .stButton), [class*="st-key-tile_"] > div[data-testid="stElementContainer"]:has(.stButton){position:absolute!important;inset:0;z-index:3;width:100%!important;height:100%}
+[class*="st-key-tile_"] .stButton, [class*="st-key-tile_"] .stButton button{width:100%!important;height:100%!important;min-height:0!important;opacity:0;cursor:pointer}
+[class*="st-key-tile_"] .stMarkdown{margin:0}
+/* 이어 붙인 버튼 줄 (세그먼트) */
+[class*="st-key-seg_"] [data-testid="stHorizontalBlock"]{gap:0!important;border:2px solid #111;background:#fff;flex-wrap:nowrap}
+[class*="st-key-seg_"] [data-testid="stColumn"]{min-width:0!important;flex:1 1 0!important}
+[class*="st-key-seg_"] .stButton button{border:0!important;border-right:2px solid #111!important;min-height:46px;font-size:13px;padding:0 4px}
+[class*="st-key-seg_"] [data-testid="stColumn"]:last-child .stButton button{border-right:0!important}
+[class*="st-key-seg_"] [data-testid="stVerticalBlock"]{gap:0}
+[class*="st-key-grid_"] [data-testid="stHorizontalBlock"]{gap:0!important;flex-wrap:nowrap}
+[class*="st-key-grid_"] [data-testid="stColumn"]{min-width:0!important;flex:1 1 0!important}
+[class*="st-key-grid_"] > [data-testid="stVerticalBlock"], [class*="st-key-grid_"]{gap:0!important}
+[class*="st-key-grid_"] .stButton button{border-width:0 2px 2px 0!important;border-style:solid!important;border-color:#111!important;min-height:46px}
+[class*="st-key-grid_"]{border-top:2px solid #111;border-left:2px solid #111}
+/* 하단 고정 */
+.st-key-ph_nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(440px,100vw);z-index:50;background:#fff;border-top:2px solid #111}
+.st-key-ph_nav [data-testid="stHorizontalBlock"]{gap:0!important;flex-wrap:nowrap}
+.st-key-ph_nav [data-testid="stColumn"]{min-width:0!important;flex:1 1 0!important}
+.st-key-ph_nav .stButton button{border:0!important;border-right:1px solid #111!important;min-height:56px;font-size:14px}
+.st-key-ph_cta{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(440px,100vw);z-index:50;background:#F4F3EF;padding:12px 20px 18px;box-sizing:border-box}
+.st-key-ph_cta .stButton button{min-height:54px;font-size:16px}
+.ph-wait{min-height:54px;border:2px dashed #8A8A86;display:flex;align-items:center;justify-content:center;color:#6B6B6B;font-weight:700;font-size:15px}
+.st-key-ph_dashed .stButton button{border-style:dashed!important;background:transparent}
+.st-key-ph_link .stButton button{border:0!important;background:transparent!important;min-height:0;padding:0;font-size:13px;justify-content:flex-start}
+.st-key-ph_link{margin-bottom:-8px}
+.st-key-ph_logout .stButton button{color:#B42318!important;justify-content:flex-start}
+[class*="st-key-menu_"] .stButton button{justify-content:flex-start;min-height:52px;padding:0 16px;font-weight:700}
+[class*="st-key-menu_"] .stButton button > div{justify-content:flex-start}
+.st-key-team_list{border:2px solid #111;background:#fff;gap:0!important}
+.st-key-team_list [data-testid="stHorizontalBlock"]{border-bottom:2px solid #111;gap:0!important;align-items:stretch!important}
+.st-key-team_list [data-testid="stHorizontalBlock"]:last-child{border-bottom:0}
+.st-key-team_list [data-testid="stColumn"]:first-child{padding:6px 14px}
+.st-key-team_list [data-testid="stColumn"]:last-child > div, .st-key-team_list [data-testid="stColumn"]:last-child [data-testid="stElementContainer"], .st-key-team_list [data-testid="stColumn"]:last-child .stButton{height:100%}
+.st-key-team_list .stButton button{border:0!important;border-left:2px solid #111!important;height:100%;min-height:62px}
+.st-key-menu_intro .stButton button{background:#FFE14D}
+.ph-card{border:2px solid #111;background:#fff}
+.ph-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid #111}
+.ph-row:last-child{border-bottom:0}
+.ph-tbl{width:100%;border-collapse:collapse;background:#fff;border:2px solid #111}
+.ph-tbl th,.ph-tbl td{border:2px solid #111;padding:10px 12px;font-size:13px;text-align:left}
+.ph-tbl th{background:#F4F3EF;font-weight:900;width:34%}
+.ph-cell{height:60px;box-sizing:border-box;padding:8px 10px;border-right:2px solid #111;border-bottom:2px solid #111;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.ph-cell .tt{display:flex;justify-content:space-between;align-items:baseline}
+.ph-cell .tt b{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600}
+.ph-cell .tt span{font-size:11px;font-weight:700}
+.ph-cell .ww{font-size:11px;font-weight:500}
+.ph-ring{box-shadow:inset 0 0 0 4px #2457D6}
+.ph-badge{display:inline-block;border:2px solid #111;background:#fff;padding:6px 10px;font-size:12px;font-weight:900;margin:0 6px 6px 0}
+.ph-badge.dash{border-style:dashed;color:#6B6B6B}
+</style>
+"""
+
+
+def inject(phone: bool = False) -> None:
     st.markdown(CSS, unsafe_allow_html=True)
+    if phone:
+        st.markdown(PHONE_CSS, unsafe_allow_html=True)
+
+
+def tile(key: str, inner_html: str, label: str = "선택") -> bool:
+    """HTML 덩어리 전체를 누를 수 있게 만든다 (투명 버튼을 위에 덮음)."""
+    with st.container(key=f"tile_{key}"):
+        st.markdown(inner_html, unsafe_allow_html=True)
+        return st.button(label, key=f"tb_{key}", use_container_width=True)
+
+
+def seg(key: str, options: list[str], current: str | None, cols: int | None = None) -> str | None:
+    """이어 붙인 버튼 줄. 눌린 값을 돌려준다."""
+    picked = None
+    with st.container(key=f"seg_{key}"):
+        n = cols or len(options)
+        for r in range(0, len(options), n):
+            cs = st.columns(n)
+            for c, o in zip(cs, options[r:r + n]):
+                with c:
+                    if st.button(o, key=f"seg_{key}_{o}", type="primary" if o == current else "secondary", use_container_width=True):
+                        picked = o
+    return picked
+
+
+def ph_head(title: str, sub: str = "", eyebrow: str = "", right: str = "", right_red: bool = False) -> None:
+    eye = ""
+    if eyebrow or right:
+        eye = f'<div class="eye"><span>{e(eyebrow)}</span><span class="{"ph-red" if right_red else ""}">{e(right)}</span></div>'
+    st.markdown(f'<div class="ph-head">{eye}<h1>{title}</h1><div class="sub">{sub}</div></div>', unsafe_allow_html=True)
+
+
+def cell_html(time: str, word: str, kind: str, small: str = "", ring: bool = False, h: int = 60) -> str:
+    bg = {"f": "background:#FFFFFF;color:#111", "m": "background:repeating-linear-gradient(135deg,#FFFFFF 0px,#FFFFFF 7px,#C9C9C9 7px,#C9C9C9 8.5px);color:#111",
+          "b": "background:#111111;color:#FFF", "y": "background:#FFE14D;color:#111"}[kind]
+    return (f'<div class="ph-cell{" ph-ring" if ring else ""}" style="{bg};height:{h}px"><div class="tt"><b>{e(time)}</b><span>{e(word)}</span></div>'
+            + (f'<div class="ww">{e(small)}</div>' if small else "") + "</div>")
 
 
 def e(s) -> str:

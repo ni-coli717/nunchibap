@@ -9,17 +9,19 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import nb_core as nb  # noqa: E402
+import nb_demo as dm  # noqa: E402
 import nb_ui as ui  # noqa: E402
 
 st.set_page_config(page_title="눈치밥 관리자", page_icon="🍚", layout="wide")
 ui.inject()
 S = nb.load()
 s = S["settings"]
+DEMO = bool(s.get("demo", True))
 
 st.sidebar.markdown(f'<div style="display:flex;align-items:center;gap:10px;padding:6px 0 14px">{ui.LOGO}<div><b style="font-size:16px">눈치밥 관리자</b><br><span style="font-size:11px;color:#BDBDB8">{ui.e(s["schoolName"])} · 영양교사</span></div></div>', unsafe_allow_html=True)
-st.sidebar.markdown(f'<div style="font-size:12px;line-height:1.7;color:#BDBDB8">운영 모드 <b style="color:#FFE14D">{"휴대폰 수거" if s["mode"] == "수거" else "휴대폰 자유"}</b><br>배식 속도 {s["mu"]}명/분/라인 (자동 보정 중)<br>정원 {nb.capacity(S)}명 / {s["slotLen"]}분</div>', unsafe_allow_html=True)
+st.sidebar.markdown(f'<div style="font-size:12px;line-height:1.7;color:#BDBDB8">운영 모드 <b style="color:#FFE14D">{"휴대폰 수거" if s["mode"] == "수거" else "휴대폰 자유"}</b><br>배식 속도 {s["mu"]}명/분/라인 (자동 보정 중)<br>정원 {nb.capacity(S)}명 / {s["slotLen"]}분<br>{"<b style=\'color:#FFE14D\'>시연 모드</b> · 시안 데이터" if DEMO else "실시간 모드"}</div>', unsafe_allow_html=True)
 
-tab_setup, tab_dash, tab_rules, tab_report, tab_ai, tab_sim = st.tabs(["01 학교 설정", "02 오늘 대시보드", "04 운영 규칙", "05 리포트", "06 AI 엔진", "07 시뮬레이션"])
+tab_setup, tab_dash, tab_board, tab_rules, tab_report, tab_ai, tab_sim = st.tabs(["01 학교 설정", "02 오늘 대시보드", "03 교실 배정표", "04 운영 규칙", "05 리포트", "06 AI 엔진", "07 시뮬레이션"])
 
 
 def save_settings(msg: str = "저장했어요. 학생 앱의 혼잡 계산에 바로 반영돼요") -> None:
@@ -29,7 +31,11 @@ def save_settings(msg: str = "저장했어요. 학생 앱의 혼잡 계산에 �
 
 
 with tab_setup:
-    ui.head("01 · SETUP", "학교 설정", "학교를 검색하면 공공데이터로 채워져요. 직접 입력은 이메일 도메인과 급식 정보뿐이에요")
+    h1, h2 = st.columns([4, 1])
+    with h1:
+        ui.head("01 · SETUP", "학교 설정", "학교를 검색하면 공공데이터로 채워져요. 직접 입력은 이메일 도메인과 급식 정보뿐이에요")
+    saved = dm.SAVED_AT if DEMO else (s["savedAt"][5:16].replace("-", ".").replace("T", " ") if s.get("savedAt") else "—")
+    h2.markdown(f'<div style="text-align:right;padding-top:40px"><span class="mono" style="border:2px solid #111;padding:6px 10px;font-size:12px;font-weight:700;background:#fff">마지막 저장 {saved}</span></div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("**학생 가입 이메일 도메인** <span class='nb-note'>이 주소로 끝나는 메일만 가입돼요</span>", unsafe_allow_html=True)
@@ -90,8 +96,16 @@ with tab_setup:
             s["mode"] = mode
             save_settings()
             st.rerun()
-        ui.postit(f'<b style="font-size:14px">배식 속도는 입력하지 않아요</b><br><span style="font-size:13px;line-height:1.6">기본값 1분에 6.2명으로 시작해서, 학생 하교 후 피드백으로 우리 학교 속도를 스스로 찾아요. 지금 <b class="mono">{s["mu"]}명/분/라인</b>{" · 보정 " + str(len(s.get("muHistory") or [])) + "회" if s.get("muHistory") else ""}</span>', rot=-1.5, block=True)
+        if DEMO:
+            ui.postit('<b style="font-size:14px">배식 속도는 입력하지 않아요</b><br><span style="font-size:13px;line-height:1.6">기본값 1분에 6명으로 시작해서, 학생 하교 후 피드백으로 2주 안에 우리 학교 속도를 스스로 찾아요.</span>', rot=-1.5, block=True)
+        else:
+            ui.postit(f'<b style="font-size:14px">배식 속도는 입력하지 않아요</b><br><span style="font-size:13px;line-height:1.6">기본값 1분에 6.2명으로 시작해서, 학생 하교 후 피드백으로 우리 학교 속도를 스스로 찾아요. 지금 <b class="mono">{s["mu"]}명/분/라인</b>{" · 보정 " + str(len(s.get("muHistory") or [])) + "회" if s.get("muHistory") else ""}</span>', rot=-1.5, block=True)
     st.divider()
+    demo_on = st.toggle("시연 모드 · 최종 시안의 데모용 예시 그대로 보여 주기 (끄면 실시간 계산 · AI 엔진 · 공유 데이터)", value=DEMO)
+    if demo_on != DEMO:
+        s["demo"] = demo_on
+        save_settings("시연 모드를 켰어요 · 시안 데이터 그대로" if demo_on else "실시간 모드로 바꿨어요")
+        st.rerun()
     if st.button("시연 데이터 초기화"):
         nb.reset()
         st.toast("시연 데이터를 초기화했어요")
@@ -99,40 +113,76 @@ with tab_setup:
     st.caption("학생 앱 가입, 예약, 피드백, 설정이 모두 기본값으로 돌아가요")
 
 with tab_dash:
-    t = nb.target_date(S)
-    rows = nb.queue(S, t)
-    cap = nb.capacity(S)
-    sum_res = sum(r["arrivals"] for r in rows)
-    peak = max(rows, key=lambda r: r["arrivals"])
-    pi = rows.index(peak)
-    peak_end = rows[min(len(rows) - 1, pi + 1)]
-    max_wait = max(r["wait"] for r in rows)
-    ui.head("02 · TODAY", f"{'오늘' if nb.is_today(t) else '내일'} 대시보드", f"{nb.fmt_date_ko(t)} · {s['menu']['name']} (인기 {s['menu']['pop']}/10) · {s['deadline']} 예약 마감, 08:00 예측 확정")
-    ui.kpis([("예약 완료", f"{sum_res}명", f"{round(sum_res / 3.6)}팀 · 전교생 {round(sum_res / s['students'] * 100)}%"),
-             ("예상 피크", f"{peak['time']}~{peak_end['time'][3:]}", f"정원 대비 {round(peak['pred'] / cap * 100)}%"),
-             ("예상 최대 대기", f"{max_wait}분", f"정원 {cap}명/칸"),
-             ("배식 속도", f"{s['mu']}", "명/분/라인 · " + (f"어제 {s['muHistory'][-1]['from']}" if s.get("muHistory") else "기본값"))])
-    mx = max([70, cap + 10] + [r["pred"] + 5 for r in rows])
-    bars = "".join(
-        f'<div class="nb-bar" style="flex-direction:row;align-items:flex-end;gap:3px"><i style="width:40%;height:{round(r["arrivals"] / mx * 100)}%;background:#111;border:0" title="예약 {r["arrivals"]}"></i><i class="k-m" style="width:40%;height:{round(r["pred"] / mx * 100)}%" title="예측 {r["pred"]}"></i></div>' for r in rows)
-    labels = "".join(f'<span class="mono" style="text-align:center;font-size:11px;font-weight:600">{r["time"][3:]}</span>' for r in rows)
-    n = len(rows)
-    st.markdown(f'<div class="nb-card"><b>슬롯별 예약 인원과 {nb.engine_label(S)}</b> <span class="nb-note">■ 예약 &nbsp; ▨ {nb.engine_label(S)}(예약 안 한 학생 포함) &nbsp; <span style="color:#B42318">- - 정원 {cap}명</span></span><div style="position:relative"><div style="position:absolute;left:0;right:0;bottom:{min(100, round(cap / mx * 100))}%;border-top:2px dashed #B42318;z-index:1"></div><div class="nb-bars" style="grid-template-columns:repeat({n},minmax(0,1fr));height:220px">{bars}</div></div><div style="display:grid;grid-template-columns:repeat({n},minmax(0,1fr));gap:10px;margin-top:6px">{labels}</div></div>', unsafe_allow_html=True)
-    b = nb.current_booking(S, t) if S["user"] else None
-    st.caption(f"학생 앱의 우리 팀 예약: {b['slot']} ({b['kind']}, {b['teamSize']}명)이 포함돼 있어요" if b else "학생 앱에서 예약하면 여기에 바로 더해져요")
-    c1, c2 = st.columns(2)
+    if DEMO:
+        cap = nb.capacity(S)
+        ui.head("02 · TODAY", "오늘 대시보드", dm.DASH_SUB)
+        ui.kpis(dm.DASH_KPIS)
+        mx = 70
+        bars = "".join(f'<div class="nb-bar" style="flex-direction:row;align-items:flex-end;gap:3px"><i style="width:40%;height:{round(r / mx * 100)}%;background:#111;border:0" title="예약 {r}"></i><i class="k-m" style="width:40%;height:{round(p / mx * 100)}%" title="AI 예측 {p}"></i></div>' for r, p in zip(dm.DASH_RES, dm.DASH_PRED))
+        labels = "".join(f'<span class="mono" style="text-align:center;font-size:11px;font-weight:600">{t[3:]}</span>' for t in dm.DASH_TIMES)
+        st.markdown(f'<div class="nb-card"><b>슬롯별 예약 인원과 AI 예측</b> <span class="nb-note">■ 예약 &nbsp; ▨ AI 예측 (예약 안 한 학생 포함) &nbsp; <span style="color:#B42318">- - 정원 {cap}명</span></span><div style="position:relative"><div style="position:absolute;left:0;right:0;bottom:{min(100, round(cap / mx * 100))}%;border-top:2px dashed #B42318;z-index:1"></div><div class="nb-bars" style="grid-template-columns:repeat(10,minmax(0,1fr));height:220px">{bars}</div></div><div style="display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:10px;margin-top:6px">{labels}</div></div>', unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            ui.postit(f'<div style="display:flex;gap:12px;align-items:flex-start">{ui.bowl("shock", 56)}<div><b style="font-size:15px">{dm.DASH_PEAK[0]}</b><div style="font-size:13px;line-height:1.55;margin-top:4px">{dm.DASH_PEAK[1]}</div></div></div>', rot=1.5, block=True)
+        with c2:
+            ui.rows_card("오늘 추천 결과", dm.DASH_REC)
+    else:
+        t = nb.target_date(S)
+        rows = nb.queue(S, t)
+        cap = nb.capacity(S)
+        sum_res = sum(r["arrivals"] for r in rows)
+        peak = max(rows, key=lambda r: r["arrivals"])
+        pi = rows.index(peak)
+        peak_end = rows[min(len(rows) - 1, pi + 1)]
+        max_wait = max(r["wait"] for r in rows)
+        ui.head("02 · TODAY", f"{'오늘' if nb.is_today(t) else '내일'} 대시보드", f"{nb.fmt_date_ko(t)} · {s['menu']['name']} (인기 {s['menu']['pop']}/10) · {s['deadline']} 예약 마감, 08:00 예측 확정")
+        ui.kpis([("예약 완료", f"{sum_res}명", f"{round(sum_res / 3.6)}팀 · 전교생 {round(sum_res / s['students'] * 100)}%"),
+                 ("예상 피크", f"{peak['time']}~{peak_end['time'][3:]}", f"정원 대비 {round(peak['pred'] / cap * 100)}%"),
+                 ("예상 최대 대기", f"{max_wait}분", f"정원 {cap}명/칸"),
+                 ("배식 속도", f"{s['mu']}", "명/분/라인 · " + (f"어제 {s['muHistory'][-1]['from']}" if s.get("muHistory") else "기본값"))])
+        mx = max([70, cap + 10] + [r["pred"] + 5 for r in rows])
+        bars = "".join(
+            f'<div class="nb-bar" style="flex-direction:row;align-items:flex-end;gap:3px"><i style="width:40%;height:{round(r["arrivals"] / mx * 100)}%;background:#111;border:0" title="예약 {r["arrivals"]}"></i><i class="k-m" style="width:40%;height:{round(r["pred"] / mx * 100)}%" title="예측 {r["pred"]}"></i></div>' for r in rows)
+        labels = "".join(f'<span class="mono" style="text-align:center;font-size:11px;font-weight:600">{r["time"][3:]}</span>' for r in rows)
+        n = len(rows)
+        st.markdown(f'<div class="nb-card"><b>슬롯별 예약 인원과 {nb.engine_label(S)}</b> <span class="nb-note">■ 예약 &nbsp; ▨ {nb.engine_label(S)}(예약 안 한 학생 포함) &nbsp; <span style="color:#B42318">- - 정원 {cap}명</span></span><div style="position:relative"><div style="position:absolute;left:0;right:0;bottom:{min(100, round(cap / mx * 100))}%;border-top:2px dashed #B42318;z-index:1"></div><div class="nb-bars" style="grid-template-columns:repeat({n},minmax(0,1fr));height:220px">{bars}</div></div><div style="display:grid;grid-template-columns:repeat({n},minmax(0,1fr));gap:10px;margin-top:6px">{labels}</div></div>', unsafe_allow_html=True)
+        b = nb.current_booking(S, t) if S["user"] else None
+        st.caption(f"학생 앱의 우리 팀 예약: {b['slot']} ({b['kind']}, {b['teamSize']}명)이 포함돼 있어요" if b else "학생 앱에서 예약하면 여기에 바로 더해져요")
+        c1, c2 = st.columns(2)
+        with c1:
+            ui.postit(f'<div style="display:flex;gap:12px;align-items:flex-start">{ui.bowl("shock", 56)}<div><b style="font-size:15px">피크 예고 {peak["time"]}~{peak_end["time"]}</b><div style="font-size:13px;line-height:1.55;margin-top:4px">약 {peak["pred"] + peak_end["pred"]}명이 몰릴 예정이에요. {s["lunchStart"]}부터 {str(s["lines"]) + "라인 모두" if s["lines"] > 1 else "라인"} 배식 준비를 권해요.</div></div></div>', rot=1.5, block=True)
+        with c2:
+            sent = len(S["recLog"])
+            acc = sum(1 for r in S["recLog"] if r["accepted"])
+            pas = [r["pa"] for r in S["recLog"] if r.get("pa") is not None]
+            ui.rows_card("추천 결과 (학생 앱 기준)", [("추천 보낸 팀", f"{sent}팀"), ("수락한 팀", f"{acc}팀" + (f" ({round(acc / sent * 100)}%)" if sent else "")),
+                                              ("AI ② 예측 수락률", f"{round(sum(pas) / len(pas) * 100)}%" if pas else "—"),
+                                              ("대기 명단", f"{len(S['waitlist'])}건"), ("피드백 응답", f"{len(S['feedback'])}건")])
+
+with tab_board:
+    ui.head("03 · CLASSROOM", "교실 배정표", "교실 전자칠판에 띄우는 화면이에요. 지금 시각에 맞춰 갈 팀이 바뀌어요")
+    tb = nb.target_date(S)
+    classes = dm.BOARD_CLASSES
+    c1, c2 = st.columns([3, 3])
     with c1:
-        ui.postit(f'<div style="display:flex;gap:12px;align-items:flex-start">{ui.bowl("shock", 56)}<div><b style="font-size:15px">피크 예고 {peak["time"]}~{peak_end["time"]}</b><div style="font-size:13px;line-height:1.55;margin-top:4px">약 {peak["pred"] + peak_end["pred"]}명이 몰릴 예정이에요. {s["lunchStart"]}부터 {str(s["lines"]) + "라인 모두" if s["lines"] > 1 else "라인"} 배식 준비를 권해요.</div></div></div>', rot=1.5, block=True)
+        cls = st.radio("반", classes, index=classes.index(dm.BOARD_DEFAULT[0]), horizontal=True, key="board_cls")
     with c2:
-        sent = len(S["recLog"])
-        acc = sum(1 for r in S["recLog"] if r["accepted"])
-        pas = [r["pa"] for r in S["recLog"] if r.get("pa") is not None]
-        ui.rows_card("추천 결과 (학생 앱 기준)", [("추천 보낸 팀", f"{sent}팀"), ("수락한 팀", f"{acc}팀" + (f" ({round(acc / sent * 100)}%)" if sent else "")),
-                                          ("AI ② 예측 수락률", f"{round(sum(pas) / len(pas) * 100)}%" if pas else "—"),
-                                          ("대기 명단", f"{len(S['waitlist'])}건"), ("피드백 응답", f"{len(S['feedback'])}건")])
+        now_opts = dm.BOARD_NOW if DEMO else (["지금"] + nb.slots(S)[::2])
+        now_sel = st.radio("미리보기 시각", now_opts, index=now_opts.index(dm.BOARD_DEFAULT[1]) if DEMO else 0, horizontal=True, key="board_now")
+    now_t = nb.now_hhmm() if now_sel == "지금" else now_sel
+    rows_b = [(t_, n_, False) for t_, n_ in dm.BOARD.get(cls, [])] if DEMO else nb.class_board(S, tb, cls)
+    nm = nb.mins(now_t)
+    html_rows = ""
+    for time_, team_, mine_ in rows_b:
+        d = nb.mins(time_) - nm
+        go_, past = -4 <= d <= 0, d < -4
+        state = "지금 가세요 →" if go_ else ("다녀왔어요" if past else f"{d}분 뒤")
+        html_rows += f'<div class="nb-brow {"go" if go_ else "past" if past else ""}"><span><span class="mono" style="font-size:26px;font-weight:600">{time_}</span> &nbsp; {ui.e(team_)}</span><span class="nb-chip">{state}</span></div>'
+    st.markdown(f'<div class="nb-board"><div class="bh"><span>{ui.e(cls)} · {dm.DATE_KO if DEMO else nb.fmt_date_ko(tb)}</span><span class="mono">NOW {now_t}</span></div>{html_rows or "<div class=nb-brow>이 반은 아직 예약이 없어요</div>"}</div>', unsafe_allow_html=True)
+    st.markdown('<a href="교실_배정표" target="_blank" style="font-weight:700">전자칠판 전체 화면으로 열기 →</a>', unsafe_allow_html=True)
 
 with tab_rules:
-    ui.head("04 · RULES", "운영 규칙", "바꾸면 다음 예약부터 바로 적용돼요")
+    ui.head("04 · RULES", "운영 규칙", "바꾸면 내일 아침 예약부터 적용돼요" if DEMO else "바꾸면 다음 예약부터 바로 적용돼요")
     c1, c2, c3 = st.columns(3)
     with c1:
         st.markdown("**슬롯과 정원**")
@@ -161,27 +211,38 @@ with tab_rules:
         st.rerun()
 
 with tab_report:
-    fb = S["feedback"]
-    avg = sum(f["wait"] for f in fb) / len(fb) if fb else None
-    rl = S["recLog"]
-    ui.head("05 · REPORT", "리포트", "도입 전후 비교 · 학교와 교육청 제출용 (예시로 표시된 숫자는 시뮬레이션이에요)")
-    ui.kpis([("평균 대기", f"{avg:.1f}분" if avg is not None else "4.1분", f"피드백 {len(fb)}건" if avg is not None else "시뮬레이션 예시 · 도입 전 9.6분"),
-             ("피크 대기", "7분", "시뮬레이션 예시 · 도입 전 16분"),
-             ("추천 수락", f"{round(sum(1 for r in rl if r['accepted']) / len(rl) * 100)}%" if rl else "71%", f"{len(rl)}건" if rl else "시뮬레이션 예시"),
-             ("1인당 1년 절약", "약 17시간", "50분 수업 약 21교시 · 시뮬레이션")])
-    wk = [("9/1주", 10.2, 9.8), ("9/2주", 9.4, 7.1), ("9/3주", 9.9, 5.6), ("9/4주", 9.6, 4.8), ("10/1주", 10.1, 4.3), ("10/2주", 9.3, 4.0), ("10/3주", 9.7, 4.1)]
-    bars = "".join(f'<div class="nb-bar" style="flex-direction:row;align-items:flex-end;gap:4px"><i class="k-m" style="width:36%;height:{round(b / 12 * 100)}%"></i><i style="width:36%;height:{round(a / 12 * 100)}%;background:#111;border:0"></i></div>' for _, b, a in wk)
-    labels = "".join(f'<span style="text-align:center;font-size:11px;font-weight:700">{w[0]}</span>' for w in wk)
-    c1, c2 = st.columns([2, 1])
-    with c1:
-        st.markdown(f'<div class="nb-card"><b>주간 평균 대기시간 (분) · 시뮬레이션 예시</b> <span class="nb-note">▨ 도입 전 &nbsp; ■ 도입 후</span><div class="nb-bars" style="grid-template-columns:repeat(7,minmax(0,1fr));height:200px">{bars}</div><div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin-top:6px">{labels}</div></div>', unsafe_allow_html=True)
-    with c2:
-        mh = s.get("muHistory") or []
-        ui.rows_card("운영 지표", [("예약 이행률", "89% (예시)"), ("피드백 응답률", "64% (예시)"), ("정기 예약 팀", "62% (예시)"),
-                                ("급식 안 먹음 응답", f"{round(sum(1 for f in fb if f['ate'] == '아니오') / len(fb) * 100)}%" if fb else "3.1% (예시)"),
-                                ("배식 속도 자동 보정", f"{len(mh)}회 · 지금 {s['mu']}명/분" if mh else "아직 피드백 없음")])
-        if mh:
-            ui.rows_card("배식 속도 보정 기록 (μ오늘 = 0.8·μ어제 + 0.2·μ추정)", [(m["date"], f"{m['from']} → {m['to']}") for m in mh[-7:]])
+    if DEMO:
+        ui.head("05 · REPORT", "리포트", "도입 전후 비교 · 학교와 교육청 제출용 (아래 숫자는 시뮬레이션 예시)")
+        ui.kpis(dm.REPORT_KPIS)
+        bars = "".join(f'<div class="nb-bar" style="flex-direction:row;align-items:flex-end;gap:4px"><i class="k-m" style="width:36%;height:{round(b / 12 * 100)}%"></i><i style="width:36%;height:{round(a / 12 * 100)}%;background:#111;border:0"></i></div>' for _, b, a in dm.REPORT_WEEKS)
+        labels = "".join(f'<span style="text-align:center;font-size:11px;font-weight:700">{w[0]}</span>' for w in dm.REPORT_WEEKS)
+        c1, c2 = st.columns([2, 1])
+        with c1:
+            st.markdown(f'<div class="nb-card"><b>주간 평균 대기시간 (분)</b> <span class="nb-note">▨ 도입 전 (시뮬레이션) &nbsp; ■ 도입 후</span><div class="nb-bars" style="grid-template-columns:repeat(7,minmax(0,1fr));height:200px">{bars}</div><div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin-top:6px">{labels}</div></div>', unsafe_allow_html=True)
+        with c2:
+            ui.rows_card("운영 지표", dm.REPORT_ROWS)
+    else:
+        fb = S["feedback"]
+        avg = sum(f["wait"] for f in fb) / len(fb) if fb else None
+        rl = S["recLog"]
+        ui.head("05 · REPORT", "리포트", "도입 전후 비교 · 학교와 교육청 제출용 (예시로 표시된 숫자는 시뮬레이션이에요)")
+        ui.kpis([("평균 대기", f"{avg:.1f}분" if avg is not None else "4.1분", f"피드백 {len(fb)}건" if avg is not None else "시뮬레이션 예시 · 도입 전 9.6분"),
+                 ("피크 대기", "7분", "시뮬레이션 예시 · 도입 전 16분"),
+                 ("추천 수락", f"{round(sum(1 for r in rl if r['accepted']) / len(rl) * 100)}%" if rl else "71%", f"{len(rl)}건" if rl else "시뮬레이션 예시"),
+                 ("1인당 1년 절약", "약 17시간", "50분 수업 약 21교시 · 시뮬레이션")])
+        wk = [("9/1주", 10.2, 9.8), ("9/2주", 9.4, 7.1), ("9/3주", 9.9, 5.6), ("9/4주", 9.6, 4.8), ("10/1주", 10.1, 4.3), ("10/2주", 9.3, 4.0), ("10/3주", 9.7, 4.1)]
+        bars = "".join(f'<div class="nb-bar" style="flex-direction:row;align-items:flex-end;gap:4px"><i class="k-m" style="width:36%;height:{round(b / 12 * 100)}%"></i><i style="width:36%;height:{round(a / 12 * 100)}%;background:#111;border:0"></i></div>' for _, b, a in wk)
+        labels = "".join(f'<span style="text-align:center;font-size:11px;font-weight:700">{w[0]}</span>' for w in wk)
+        c1, c2 = st.columns([2, 1])
+        with c1:
+            st.markdown(f'<div class="nb-card"><b>주간 평균 대기시간 (분) · 시뮬레이션 예시</b> <span class="nb-note">▨ 도입 전 &nbsp; ■ 도입 후</span><div class="nb-bars" style="grid-template-columns:repeat(7,minmax(0,1fr));height:200px">{bars}</div><div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin-top:6px">{labels}</div></div>', unsafe_allow_html=True)
+        with c2:
+            mh = s.get("muHistory") or []
+            ui.rows_card("운영 지표", [("예약 이행률", "89% (예시)"), ("피드백 응답률", "64% (예시)"), ("정기 예약 팀", "62% (예시)"),
+                                    ("급식 안 먹음 응답", f"{round(sum(1 for f in fb if f['ate'] == '아니오') / len(fb) * 100)}%" if fb else "3.1% (예시)"),
+                                    ("배식 속도 자동 보정", f"{len(mh)}회 · 지금 {s['mu']}명/분" if mh else "아직 피드백 없음")])
+            if mh:
+                ui.rows_card("배식 속도 보정 기록 (μ오늘 = 0.8·μ어제 + 0.2·μ추정)", [(m["date"], f"{m['from']} → {m['to']}") for m in mh[-7:]])
 
 # ---------------- 06 AI 엔진 ----------------
 import nb_ai  # noqa: E402
