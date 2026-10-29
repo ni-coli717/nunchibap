@@ -30,7 +30,9 @@ html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 .block-container, [data-testid="stMainBlockContainer"] {padding:0!important; max-width:100%!important}
 [data-testid="stVerticalBlock"] {gap:0!important}
 [data-testid="stElementContainer"]:has(> .stMarkdown style), .element-container:has(style) {display:none}
-iframe[title^="nb_bridge"], iframe[title*="nunchibap"] {display:block; width:100%; border:0}
+iframe[title*="nunchibap"] {display:block; width:100%; border:0; height:100vh!important; height:100dvh!important}
+html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {overflow:hidden!important}
+[data-testid="stMain"] {padding:0!important}
 </style>
 """
 
