@@ -85,7 +85,7 @@ def mount(name: str, view: str, key: str | None = None, every: int = 4) -> None:
         S = nb.load()
         if "_rev" not in S:
             nb.save(S)
-        val = comp(state=S, rev=int(S["_rev"]), view=view, ai=ai_payload(S), key=key, default=None)
+        val = comp(state=S, rev=int(S["_rev"]), view=view, ai=ai_payload(S), ack=st.session_state.get(f"{key}_nonce"), key=key, default=None)
         if isinstance(val, dict) and val.get("nonce") and val["nonce"] != st.session_state.get(f"{key}_nonce"):
             st.session_state[f"{key}_nonce"] = val["nonce"]
             if isinstance(val.get("patch"), dict) and val["patch"]:
