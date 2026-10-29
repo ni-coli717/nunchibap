@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>눈치밥</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 레이아웃: 폰에서는 전체 화면, 넓은 화면에서는 390×844 폰 틀을 가운데에 놓는다 */
+:root{--paper:#F4F3EF;--ink:#111111;--white:#FFFFFF;--yellow:#FFE14D;--grey:#555555;--line:#111111;--mute:#6B6B6B;--red:#B42318;--tape:rgba(226,219,198,.9);--stripe:repeating-linear-gradient(135deg,#FFFFFF 0px,#FFFFFF 7px,#C9C9C9 7px,#C9C9C9 8.5px);--desk:#E7E5DE;--sans:'Noto Sans KR',Arial,sans-serif;--mono:'IBM Plex Mono','Courier New',monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--desk:#1C1C1A;color-scheme:dark}}
+:root[data-theme="dark"]{--desk:#1C1C1A;color-scheme:dark}
+html,body{height:100%}
+body{margin:0;background:var(--desk);color:var(--ink);font-family:var(--sans);font-size:14px;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+button{font-family:inherit;color:inherit;cursor:pointer;border-radius:0}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #2457D6;outline-offset:1px}
+input{font-family:inherit;color:var(--ink);border-radius:0}
+/* ---------- 반응형 틀 ----------
+   ~599px  : 폰 전체 화면
+   600~1023: 종이 책상 위 폰 화면 (390px)
+   1024px~ : 로그인 전 = 브랜드 + 가입 카드 2단 / 로그인 후 = 오늘 패널 + 작업 패널 2단 */
+html,body,#root{height:100%}
+#root{position:relative;overflow:hidden}
+.m-full{height:100%;display:flex;flex-direction:column;background:var(--paper)}
+.m-full>.phone{flex:1;min-height:0}
+.m-desk{height:100%;display:flex;align-items:center;justify-content:center;padding:16px}
+.phone{position:relative;width:100%;height:100%;overflow:hidden;display:flex;flex-direction:column;background:var(--paper)}
+.m-desk .phone{width:390px;max-width:100%;height:min(844px,100%);border:3px solid var(--ink);box-shadow:8px 10px 0 rgba(0,0,0,.18)}
+/* 데스크톱 · 로그인 전 */
+.da{height:100%;display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:64px;align-items:center;max-width:1120px;margin:0 auto;padding:32px 48px}
+.da-brand{display:flex;flex-direction:column;gap:0;min-width:0}
+.da-brand h1{margin:20px 0 0;font-size:96px;font-weight:900;letter-spacing:-5px;line-height:1}
+.da-steps{margin:40px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:3px solid var(--ink);border-left:3px solid var(--ink);background:var(--white);max-width:560px}
+.da-steps div{padding:14px 16px;border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);display:flex;flex-direction:column;gap:4px}
+.da-steps .t{font-family:var(--mono);font-size:15px;font-weight:600}
+.da-steps .w{font-size:14px;font-weight:900}
+.da-steps .s{font-size:12px;color:var(--grey);line-height:1.45}
+.da-card{position:relative;height:min(700px,100%);border:3px solid var(--ink);background:var(--paper);box-shadow:8px 10px 0 rgba(0,0,0,.12);overflow:hidden;display:flex;flex-direction:column}
+/* 데스크톱 · 로그인 후 */
+.dw{height:100%;display:flex;flex-direction:column}
+.dw-top{flex:none;display:flex;align-items:center;gap:24px;height:64px;padding:0 32px;background:var(--white);border-bottom:3px solid var(--ink)}
+.dw-brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:900;letter-spacing:-.5px}
+.dw-brand .mono{font-size:12px;font-weight:600;color:var(--grey);letter-spacing:0}
+.dw-nav{display:flex;height:100%;margin-left:16px}
+.dw-nav button{height:100%;padding:0 20px;border:0;border-left:1px solid var(--ink);background:transparent;font-size:15px;font-weight:500}
+.dw-nav button:last-child{border-right:1px solid var(--ink)}
+.dw-nav button[aria-current="page"]{background:var(--ink);color:var(--white);font-weight:700}
+.dw-me{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--grey)}
+.dw-me b{color:var(--ink)}
+.dw-me button{min-height:36px;padding:0 12px;border:2px solid var(--ink);background:var(--yellow);font-size:13px;font-weight:700}
+.dw-body{flex:1;min-height:0;display:grid;grid-template-columns:420px minmax(0,680px);justify-content:center;align-items:start;align-content:center;gap:24px;padding:24px 32px}
+.pane{position:relative;min-height:0;max-height:100%;border:3px solid var(--ink);background:var(--paper);overflow:hidden;display:flex;flex-direction:column}
+.dw .tabbar{display:none}
+.dw .pane-today .screen{animation:none}
+.dw .sheet .postit{--r:-.6deg!important}
+@media (min-width:1280px){.dw-body{grid-template-columns:440px minmax(0,760px);gap:32px}}
+@media (min-width:1600px){.dw-body{grid-template-columns:480px minmax(0,880px);padding:32px 48px}}
+@media (max-width:1100px){.da{grid-template-columns:minmax(0,1fr) 400px;gap:40px;padding:24px 32px}.da-brand h1{font-size:80px}}
+
+/* 모션 */
+@keyframes nbIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes nbSlide{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes nbStick{0%{opacity:0;transform:translateY(-38px) rotate(calc(var(--r,0deg) - 11deg)) scale(1.07)}55%{opacity:1;transform:translateY(4px) rotate(calc(var(--r,0deg) + 3deg)) scale(1)}78%{transform:translateY(-1px) rotate(calc(var(--r,0deg) - 1.2deg))}100%{transform:rotate(var(--r,0deg))}}
+@keyframes nbSheet{from{transform:translateY(100%)}to{transform:none}}
+@keyframes nbDim{from{opacity:0}to{opacity:1}}
+@keyframes nbStamp{0%{opacity:0;transform:scale(1.9) rotate(-24deg)}65%{opacity:1;transform:scale(.9) rotate(-10deg)}100%{opacity:1;transform:scale(1) rotate(-12deg)}}
+@keyframes nbPop{0%{opacity:0;transform:scale(.6)}70%{opacity:1;transform:scale(1.08)}100%{transform:none}}
+@keyframes nbGlance{0%,38%{transform:translateX(0)}46%,78%{transform:translateX(-8px)}86%,100%{transform:translateX(0)}}
+@keyframes nbGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes nbShake{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.screen{flex:1;min-height:0;display:flex;flex-direction:column;animation:nbIn 300ms cubic-bezier(.2,.8,.2,1) both}
+.scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden}
+.slide{animation:nbSlide 320ms cubic-bezier(.2,.8,.2,1) both}
+.stag{animation:nbIn 340ms cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 35ms)}
+.postit{position:relative;background:var(--yellow);border:3px solid var(--ink);color:var(--ink);transform:rotate(var(--r,0deg));transform-origin:50% 0;animation:nbStick 620ms cubic-bezier(.2,.8,.2,1) backwards;animation-delay:var(--d,0ms);transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.postit:hover{transform:rotate(0deg) translateY(-3px)}
+.tape{position:absolute;top:-14px;left:50%;width:64px;height:22px;margin-left:-32px;background:var(--tape);transform:rotate(-4deg);pointer-events:none}
+.sheet{animation:nbSheet 380ms cubic-bezier(.2,.8,.2,1) both}
+.dim{animation:nbDim 260ms ease both}
+.stamp{transform:rotate(-12deg);animation:nbStamp 460ms 420ms cubic-bezier(.2,.8,.2,1) backwards}
+.pop{animation:nbPop 420ms cubic-bezier(.2,.8,.2,1) backwards;animation-delay:var(--d,0ms)}
+.eyes{animation:nbGlance 3.4s ease-in-out infinite}
+.grow{transform-origin:50% 100%;animation:nbGrow 520ms cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 70ms)}
+.shake{animation:nbShake 380ms ease}
+.btn{transition:transform .08s ease,background-color .15s,color .15s}
+.btn:active{transform:translateY(2px)}
+.cell{transition:background-color .18s,color .18s,box-shadow .18s,transform .1s}
+.cell:active{transform:scale(.97)}
+.knob{transition:left .2s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* 공통 부품 */
+.mono{font-family:var(--mono)}
+.head{padding:14px 20px 12px;background:var(--white);border-bottom:2px solid var(--line)}
+.head h1{margin:2px 0 0;font-size:24px;font-weight:900;letter-spacing:-.5px}
+.head .sub{font-size:12px;color:var(--grey);margin-top:2px}
+.back{padding:0;min-height:32px;border:0;background:transparent;font-size:13px;font-weight:700}
+.primary{width:100%;min-height:54px;border:2px solid var(--ink);background:var(--ink);color:var(--white);font-size:16px;font-weight:700}
+.secondary{width:100%;min-height:50px;border:2px solid var(--ink);background:var(--white);color:var(--ink);font-size:15px;font-weight:700}
+.ghost{min-height:54px;display:flex;align-items:center;justify-content:center;border:2px dashed #9A9A9A;color:var(--mute);font-size:15px;font-weight:700}
+.field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#333}
+.input{min-height:52px;width:100%;padding:0 14px;border:2px solid var(--ink);background:var(--white);font-size:16px}
+.seg{display:grid;border:2px solid var(--ink);background:var(--white)}
+.seg button{min-height:46px;padding:0 4px;border:0;border-right:2px solid var(--ink);background:var(--white);font-size:13px;font-weight:500}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--white);font-weight:700}
+.gridopt{display:grid;border-top:2px solid var(--ink);border-left:2px solid var(--ink);background:var(--white)}
+.gridopt button{min-height:46px;padding:0 4px;border:0;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);background:var(--white);font-size:13px;font-weight:500}
+.gridopt button[aria-pressed="true"]{background:var(--ink);color:var(--white);font-weight:700}
+.k-f{background:var(--white);color:var(--ink)}.k-m{background:var(--stripe);color:var(--ink)}.k-b{background:var(--ink);color:var(--white)}.k-y{background:var(--yellow);color:var(--ink)}
+.tabbar{margin-top:auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:2px solid var(--line);background:var(--white)}
+.tabbar button{min-height:56px;border:0;border-right:1px solid var(--line);background:var(--white);font-size:14px;font-weight:500}
+.tabbar button:last-child{border-right:0}
+.tabbar button[aria-current="page"]{background:var(--ink);color:var(--white);font-weight:700}
+.list{border-top:2px solid var(--ink);border-left:2px solid var(--ink);border-right:2px solid var(--ink);background:var(--white)}
+.row{display:flex;justify-content:space-between;align-items:center;min-height:52px;padding:0 14px;border-bottom:2px solid var(--ink);width:100%;background:var(--white);border-left:0;border-right:0;border-top:0;text-align:left;font-size:14px;font-weight:700}
+.switch{position:relative;width:52px;height:30px;padding:0;border:2px solid var(--ink);background:var(--white);transition:background-color .2s}
+.switch[aria-checked="true"]{background:var(--ink)}
+.switch .knob{position:absolute;top:3px;left:3px;width:20px;height:20px;background:var(--ink)}
+.switch[aria-checked="true"] .knob{left:25px;background:var(--yellow)}
+.toast{position:fixed;left:16px;right:16px;bottom:80px;max-width:420px;margin:0 auto;z-index:9;padding:12px 14px;background:var(--ink);color:var(--yellow);font-size:13px;font-weight:700;animation:nbIn 240ms ease both}
+.steps{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:2px solid var(--line);background:var(--white)}
+.steps li{padding:8px 10px;border-right:1px solid var(--line);color:var(--mute);font-size:12px;font-weight:700;line-height:1.35}
+.steps li:last-child{border-right:0}
+.steps li.on{background:var(--ink);color:var(--white)}
+.steps li span{font-weight:500}
+.steps li button{padding:0;border:0;background:transparent;color:inherit;font:inherit;text-decoration:underline}
+.hcell{height:48px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.slotbtn{height:60px;padding:8px 10px;border:0;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:6px;text-align:left}
+.slotbtn[aria-pressed="true"]{box-shadow:inset 0 0 0 4px #2457D6}
+.kv{width:100%;border-collapse:collapse;background:var(--white);font-size:13px}
+.kv th,.kv td{border:2px solid var(--ink);padding:10px 12px;text-align:left}
+.kv th{width:86px;background:#EDEDE9}
+.chip{padding:6px 10px;border:2px solid var(--ink);background:var(--white);font-size:12px;font-weight:700}
+.chip.off{border-style:dashed;border-color:#9A9A9A;color:var(--mute)}
+</style>
+</head>
+<body>
+
+
+<div id="root" aria-live="polite"></div>
+
+<script src="nb-core.js"></script>
+<script src="nb-bridge.js"></script>
+<script>
+(function () {
+  'use strict';
+  var S = NB.load();
+  /* 화면 상태 (저장하지 않음) */
+  var ui = { screen: S.user && S.user.introDone ? 'home' : 'splash', email: '', code: '', grade: '2', cls: '3', name: '', intro: 0, introFrom: 'signup', picked: null, rec: false, fb: { ate: '예', timing: '예약대로', bucket: null }, fbOut: {}, justSent: false, toast: null, invite: false, inviteName: '', editDay: null, privacy: false };
+  var now = function () { return new Date(); };
+  var SCHOOLS = function () { var m = {}; S.settings.domains.forEach(function (d) { if (d.ok) m[d.name] = S.settings.schoolName; }); return m; };
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function bowl(kind, w) {
+    w = w || 60; var h = Math.round(w * 0.75);
+    var face = kind === 'glance' ? '<g class="eyes"><rect x="50" y="42" width="8" height="12" fill="#111"/><rect x="80" y="42" width="8" height="12" fill="#111"/></g><rect x="44" y="62" width="40" height="6" fill="#FFE14D"/>'
+      : kind === 'shock' ? '<rect x="46" y="43" width="8" height="8" fill="#111"/><rect x="76" y="43" width="8" height="8" fill="#111"/><rect x="58" y="62" width="12" height="10" fill="#FFF" stroke="#111" stroke-width="5"/>'
+      : kind === 'happy' ? '<path d="M40 54 L50 42 L60 54" fill="none" stroke="#111" stroke-width="6"/><path d="M70 54 L80 42 L90 54" fill="none" stroke="#111" stroke-width="6"/><rect x="44" y="62" width="40" height="8" fill="#FFE14D"/><rect x="22" y="56" width="10" height="5" fill="#FFB8A8"/><rect x="96" y="56" width="10" height="5" fill="#FFB8A8"/>'
+      : '<rect x="46" y="48" width="8" height="6" fill="#111"/><rect x="76" y="48" width="8" height="6" fill="#111"/>';
+    var eyesBox = kind === 'shock' ? '<rect x="40" y="36" width="20" height="22" fill="#FFF" stroke="#111" stroke-width="5"/><rect x="70" y="36" width="20" height="22" fill="#FFF" stroke="#111" stroke-width="5"/>' : kind === 'happy' ? '' : '<rect x="40" y="40" width="20" height="16" fill="#FFF" stroke="#111" stroke-width="4"/><rect x="70" y="40" width="20" height="16" fill="#FFF" stroke="#111" stroke-width="4"/>';
+    return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 128 96" role="img" aria-label="밥그릇 마스코트"><path d="M14 30 H114 L102 78 H26 Z" fill="#FFF" stroke="#111" stroke-width="4"/><path d="M22 30 C30 10, 98 10, 106 30" fill="#FFF" stroke="#111" stroke-width="4"/><rect x="38" y="80" width="52" height="12" fill="#111"/>' + eyesBox + face + '</svg>';
+  }
+  var LOGO = '<svg width="50" height="22" viewBox="0 0 150 66" role="img" aria-label="눈치밥"><g fill="#FFF" stroke="#111" stroke-width="7"><rect x="4" y="4" width="28" height="29"/><rect x="32" y="4" width="29" height="29" fill="#111"/><rect x="61" y="4" width="29" height="29" fill="#111"/><rect x="90" y="4" width="29" height="29"/><rect x="119" y="4" width="27" height="29"/><rect x="4" y="33" width="28" height="29"/><rect x="32" y="33" width="29" height="29"/><rect x="61" y="33" width="29" height="29"/><rect x="90" y="33" width="29" height="29" fill="#FFE14D"/><rect x="119" y="33" width="27" height="29"/></g></svg>';
+
+  function emailKind() {
+    var em = (ui.email || '').trim().toLowerCase(); var at = em.indexOf('@'); var dom = at > 0 ? em.slice(at + 1) : '';
+    var school = SCHOOLS()[dom] || '';
+    var kind = !em ? 'idle' : (at < 1 || dom.indexOf('.') < 0 || /\.$/.test(dom)) ? 'typing' : school ? 'ok' : /\.(hs|ms|es|sc)\.kr$|\.go\.kr$|\.ac\.kr$/.test(dom) ? 'missing' : 'bad';
+    return { kind: kind, dom: dom, school: school };
+  }
+
+  /* ---------- 화면들 ---------- */
+  function vSplash() {
+    return '<div class="screen" style="padding:0 28px 28px"><div style="flex:1;display:flex;flex-direction:column;justify-content:center">' + bowl('glance', 168) +
+      '<h1 style="margin:22px 0 0;font-size:52px;font-weight:900;letter-spacing:-2.5px;line-height:1">눈치밥</h1><div class="mono" style="font-size:15px;font-weight:600;margin-top:6px">nunchi-bap</div>' +
+      '<div class="postit" style="--r:-2deg;--d:350ms;margin-top:34px;padding:18px 18px 16px;width:max-content;max-width:100%"><div class="tape"></div><div style="font-size:20px;font-weight:900">눈치 보지 말고, 눈치 있게</div><div style="font-size:14px;margin-top:4px">밥 먹을 타이밍, 눈치밥이 알려 줄게!</div></div></div>' +
+      '<button class="primary btn" data-act="go" data-arg="email">학교 이메일로 시작하기</button><p style="margin:10px 0 0;font-size:12px;color:var(--grey);text-align:center">학교에서 받은 이메일만 쓸 수 있어요</p></div>';
+  }
+  function vEmail() {
+    var e = emailKind();
+    var demos = [['s25012@masong.hs.kr', '등록된 학교'], ['student@sample.hs.kr', '미등록 학교'], ['abc@gmail.com', '학교 메일 아님']];
+    var status = e.kind === 'ok' ? '<div class="pop" style="margin-top:10px;display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--ink);background:var(--white)"><span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:var(--ink);color:var(--yellow);font-size:14px;font-weight:900">✓</span><span style="display:flex;flex-direction:column"><b style="font-size:14px">' + esc(e.school) + '</b><span style="font-size:12px;color:#444">등록된 학교예요 · ' + esc(e.dom) + '</span></span></div>'
+      : e.kind === 'missing' ? '<div class="pop" style="margin-top:10px;padding:10px 12px;border:2px dashed var(--ink);background:var(--white)"><b style="font-size:14px">아직 눈치밥을 쓰지 않는 학교예요</b><div style="font-size:12px;color:#444;margin-top:2px">' + esc(e.dom) + ' · 선생님께 도입을 요청할 수 있어요</div></div>'
+      : e.kind === 'bad' ? '<div class="shake" style="margin-top:10px;padding:10px 12px;border:2px solid var(--red);background:var(--white);color:var(--red);font-size:13px;font-weight:700">학교에서 받은 이메일만 쓸 수 있어요</div>'
+      : e.kind === 'typing' ? '<div style="margin-top:10px;font-size:12px;color:var(--grey)">@ 뒤 학교 주소까지 입력해 주세요</div>' : '';
+    var cta = e.kind === 'ok' ? '<button class="primary btn" data-act="go" data-arg="code">인증 코드 받기</button>' : e.kind === 'missing' ? '<button class="secondary btn" style="min-height:54px;font-size:16px" data-act="go" data-arg="nope">우리 학교에 도입 요청하기</button>' : '<div class="ghost">학교 이메일을 입력해 주세요</div>';
+    return '<div class="screen"><div class="head"><button class="back btn" data-act="go" data-arg="splash">← 처음으로</button><h1>학교 이메일로 가입</h1><div class="sub">이메일 주소로 우리 학교가 눈치밥을 쓰는지 바로 확인해요</div></div>' +
+      '<div class="scroll"><div style="padding:20px 20px 0"><label class="field">학교 이메일<input id="email" class="input mono" type="email" value="' + esc(ui.email) + '" placeholder="학번@학교도메인" autocomplete="email" data-bind="email"></label>' + status +
+      '<div style="margin-top:22px;font-size:12px;font-weight:700;color:#333">데모용 예시</div><div class="list" style="margin-top:6px">' + demos.map(function (d) { return '<button class="row btn" data-act="fill" data-arg="' + d[0] + '"><span class="mono" style="font-size:13px;font-weight:600">' + d[0] + '</span><span style="font-size:12px;color:var(--grey);font-weight:500">' + d[1] + '</span></button>'; }).join('') + '</div></div></div>' +
+      '<div style="padding:20px">' + cta + '</div></div>';
+  }
+  function vNope() {
+    var e = emailKind();
+    return '<div class="screen" style="padding:0 24px 24px"><div style="flex:1;display:flex;flex-direction:column;justify-content:center">' + bowl('sad', 104) +
+      '<h1 style="margin:20px 0 0;font-size:26px;font-weight:900;letter-spacing:-.5px;line-height:1.3">우리 학교는<br>아직 눈치밥이 없어요</h1><p style="margin:8px 0 0;font-size:14px;line-height:1.6;color:#333"><b class="mono">' + esc(e.dom) + '</b> 학교가 목록에 없어요. 요청이 모이면 학교와 교육청에 도입을 제안해요.</p>' +
+      '<div class="postit" style="--r:1.5deg;--d:200ms;margin-top:22px;padding:14px 16px 16px"><div class="tape"></div><div style="font-size:14px;font-weight:900">선생님께 이렇게 전해 주세요</div><div style="font-size:13px;line-height:1.55;margin-top:4px">"급식 줄이 너무 길어요. 눈치밥으로 시간을 나눠 가면 덜 기다릴 수 있대요!"</div></div></div>' +
+      '<button class="primary btn" data-act="request">도입 요청 보내기</button><button class="secondary btn" style="margin-top:8px" data-act="go" data-arg="email">다른 이메일로 다시 하기</button></div>';
+  }
+  function vCode() {
+    var ok = ui.code.length === 6;
+    return '<div class="screen"><div class="head"><button class="back btn" data-act="go" data-arg="email">← 이메일 바꾸기</button><h1>인증 코드 입력</h1><div class="sub"><b class="mono" style="color:var(--ink)">' + esc(ui.email) + '</b>로 6자리 코드를 보냈어요</div></div>' +
+      '<div style="padding:24px 20px 0"><label class="field" style="gap:8px">6자리 코드<input id="code" class="input mono" type="text" inputmode="numeric" maxlength="6" value="' + esc(ui.code) + '" data-bind="code" style="min-height:64px;font-size:30px;font-weight:600;letter-spacing:18px"></label>' +
+      '<button class="btn" data-act="fillcode" style="margin-top:10px;min-height:40px;padding:0 12px;border:2px dashed var(--ink);background:var(--white);font-size:13px;font-weight:700">데모: 메일에서 코드 붙여넣기</button><p style="margin:14px 0 0;font-size:12px;color:var(--grey)">코드가 안 왔나요? 스팸함을 확인하거나 1분 뒤 다시 보내기</p></div>' +
+      '<div style="margin-top:auto;padding:20px">' + (ok ? '<button class="primary btn" data-act="go" data-arg="profile">확인</button>' : '<div class="ghost">코드 6자리를 입력해 주세요</div>') + '</div></div>';
+  }
+  function vProfile() {
+    var e = emailKind();
+    var g = ['1', '2', '3'].map(function (x) { return '<button class="btn" data-act="grade" data-arg="' + x + '" aria-pressed="' + (ui.grade === x) + '">' + x + '학년</button>'; }).join('');
+    var c = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map(function (x) { return '<button class="btn" data-act="cls" data-arg="' + x + '" aria-pressed="' + (ui.cls === x) + '">' + x + '</button>'; }).join('');
+    return '<div class="screen"><div class="head"><div class="mono" style="font-size:12px;color:var(--grey)">' + esc(e.school || S.settings.schoolName) + ' · 인증 완료</div><h1>몇 학년 몇 반이에요?</h1><div class="sub">반을 알면 4교시가 끝나는 시간에 맞춰 추천해요</div></div>' +
+      '<div class="scroll"><div style="padding:20px 20px 0;display:flex;flex-direction:column;gap:18px"><div><div style="font-size:12px;font-weight:700;color:#333;margin-bottom:6px">학년</div><div class="seg" role="group" aria-label="학년" style="grid-template-columns:repeat(3,minmax(0,1fr))">' + g + '</div></div>' +
+      '<div><div style="font-size:12px;font-weight:700;color:#333;margin-bottom:6px">반</div><div class="gridopt" role="group" aria-label="반" style="grid-template-columns:repeat(5,minmax(0,1fr))">' + c + '</div></div>' +
+      '<label class="field">이름 (선택, 팀원에게만 보여요)<input id="name" class="input" type="text" value="' + esc(ui.name) + '" data-bind="name" style="min-height:48px;font-size:15px"></label>' +
+      '<p style="margin:0;font-size:11px;line-height:1.5;color:var(--grey)">학교, 학년, 반, 팀만 저장해요. 위치나 사진은 모으지 않고, 개인 기록은 학기가 끝나면 지워요.</p></div></div>' +
+      '<div style="padding:20px"><button class="primary btn" data-act="signup">다음</button></div></div>';
+  }
+  function vIntro() {
+    var i = ui.intro, kinds = ['f', 'm', 'b', 'b', 'm', 'y', 'f', 'f', 'f', 'f'];
+    var art = [
+      '<div style="height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--paper);border:2px solid var(--ink)"><div style="display:grid;grid-template-columns:repeat(5,48px);border-top:2px solid var(--ink);border-left:2px solid var(--ink)">' + kinds.map(function (k, j) { return '<span class="stag k-' + k + '" style="--i:' + j + ';display:block;height:40px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink)"></span>'; }).join('') + '</div><div class="postit mono" style="--r:-3deg;--d:650ms;margin-top:22px;padding:12px 16px;font-size:20px;font-weight:600"><span class="tape"></span>12:35 예약 ✓</div></div>',
+      '<div style="height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--paper);border:2px solid var(--ink)"><div class="pop" style="display:flex;justify-content:space-between;align-items:center;width:200px;padding:12px 14px;background:var(--ink);color:var(--white)"><span class="mono" style="font-size:18px;font-weight:600">12:20</span><span style="font-size:13px;font-weight:700">꽉 참 · 11분</span></div><div style="display:flex;gap:14px"><div class="postit" style="--r:-4deg;--d:450ms;padding:14px 14px 10px"><span class="tape"></span><div class="mono" style="font-size:18px;font-weight:600">12:35</div><div style="font-size:12px;font-weight:700">대기 2분</div></div><div class="postit" style="--r:3deg;--d:650ms;padding:14px 14px 10px"><span class="tape"></span><div class="mono" style="font-size:18px;font-weight:600">12:10</div><div style="font-size:12px;font-weight:700">대기 1분</div></div></div></div>',
+      '<div style="height:260px;display:flex;align-items:center;justify-content:center;background:var(--paper);border:2px solid var(--ink)"><div class="pop" style="width:270px;border:2px solid var(--ink);background:var(--white)"><div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--ink);color:var(--white)"><span style="font-size:12px;font-weight:900">교실 화면 · 2학년 3반</span><span class="mono" style="font-size:12px;font-weight:600">12:34</span></div><div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--yellow);border-bottom:2px solid var(--ink)"><span class="mono" style="font-size:18px;font-weight:600">12:35</span><span style="font-size:13px;font-weight:900">A팀 지금 가세요 →</span></div><div style="display:flex;justify-content:space-between;align-items:center;padding:12px"><span class="mono" style="font-size:18px;font-weight:600">12:40</span><span style="font-size:13px;font-weight:700">E팀 · 5분 뒤</span></div></div></div>',
+      '<div style="height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--paper);border:2px solid var(--ink)"><div style="display:flex;gap:8px"><span class="pop" style="--d:100ms;padding:10px 12px;background:var(--ink);color:var(--white);font-size:13px;font-weight:700">먹었어요</span><span class="pop" style="--d:300ms;padding:10px 12px;background:var(--ink);color:var(--white);font-size:13px;font-weight:700">예약대로</span><span class="pop" style="--d:500ms;padding:10px 12px;background:var(--ink);color:var(--white);font-size:13px;font-weight:700">0~3분</span></div><div class="postit" style="--r:2deg;--d:750ms;padding:14px 16px 10px;font-size:15px;font-weight:900"><span class="tape"></span>+5P · 내일 예측이 더 정확해져요</div></div>'
+    ];
+    var text = [['아침, 휴대폰 내기 전에<br>급식 시간을 골라요', S.settings.deadline + '까지 칸 하나만 누르면 끝. 정기 예약을 해두면 매일 알아서 잡혀요. 팀 대표가 고르면 팀 전원이 같이 예약돼요.'], ['꽉 찬 시간은<br>눈치밥이 피해 줘요', '검정 칸은 이미 꽉 찬 시간이에요. 누르면 우리 팀이 다 들어가는 가까운 시간을 포스트잇으로 붙여 줘요.'], ['점심엔 고른 시간에<br>가기만 하면 돼요', '휴대폰이 없어도 괜찮아요. 교실 화면에 지금 갈 팀이 떠요. 점심시간엔 아무것도 누를 필요 없어요.'], ['하교 후 30초,<br>오늘 어땠는지 알려 줘요', '휴대폰을 돌려받으면 세 번만 눌러 주세요. 모두의 답이 모여 내일 혼잡 예측이 더 정확해져요.']];
+    var dots = [0, 1, 2, 3].map(function (j) { return '<span style="display:block;width:' + (j === i ? 24 : 10) + 'px;height:10px;background:' + (j === i ? 'var(--ink)' : '#D2D2CC') + ';transition:width .25s,background-color .25s"></span>'; }).join('');
+    var fromSettings = ui.introFrom === 'settings';
+    return '<div class="screen" style="background:var(--white)"><div style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--ink)"><span class="mono" style="font-size:13px;font-weight:600">사용법 ' + (i + 1) + '/4</span><button class="btn" data-act="introEnd" style="min-height:36px;padding:0 10px;border:0;background:transparent;font-size:13px;font-weight:700;color:var(--grey)">' + (fromSettings ? '닫기' : '건너뛰기') + '</button></div>' +
+      '<div class="slide scroll" style="padding:28px 24px 0" data-key="' + i + '">' + art[i] + '<h2 style="margin:24px 0 0;font-size:24px;font-weight:900;letter-spacing:-.5px">' + text[i][0] + '</h2><p style="margin:8px 0 0;font-size:14px;line-height:1.6;color:#333">' + text[i][1] + '</p></div>' +
+      '<div style="padding:20px 24px 24px;display:flex;justify-content:space-between;align-items:center"><div style="display:flex;gap:6px">' + dots + '</div><button class="primary btn" data-act="introNext" style="width:auto;min-height:52px;padding:0 24px;font-size:15px">' + (i < 3 ? '다음' : fromSettings ? '다 봤어요' : '시작하기') + '</button></div></div>';
+  }
+
+  function headerBar(sub) {
+    return '<div style="padding:12px 20px;background:var(--white);border-bottom:2px solid var(--line);display:flex;align-items:center;gap:10px">' + LOGO + '<div style="flex:1;min-width:0"><div style="font-size:18px;font-weight:900;letter-spacing:-.5px;line-height:1.2">' + sub + '</div><div class="mono" style="font-size:12px;color:var(--grey)">' + NB.fmtDate(now()) + ' · ' + esc(S.user.grade) + '-' + esc(S.user.cls) + '</div></div></div>';
+  }
+  function vHome() {
+    var t = NB.targetDate(), rows = NB.queue(t), b = NB.currentBooking(t), left = NB.deadlineLeft();
+    var todayTarget = NB.isToday(t);
+    var h = now().getHours();
+    var greet = h < 11 ? '좋은 아침, ' : h < 17 ? '안녕, ' : '수고했어, ';
+    var dl = todayTarget ? (left > 0 ? S.settings.deadline + ' <span style="font-family:var(--sans);font-size:12px;font-weight:700">· ' + (left >= 60 ? Math.floor(left / 60) + '시간 ' : '') + (left % 60) + '분 남음</span>' : '마감') : '내일 ' + S.settings.deadline;
+    var cells = rows.map(function (r, i) { var k = b && b.slot === r.time ? 'y' : r.kind; return '<div class="stag hcell k-' + k + '" style="--i:' + i + '"><span class="mono" style="font-size:13px;font-weight:600">' + r.time + '</span><span style="font-size:11px;font-weight:700">' + NB.KIND_WORD[k] + '</span></div>'; }).join('');
+    var br = b ? NB.slotRow(rows, b.slot) : null;
+    var fbDone = S.feedback.some(function (f) { return f.date === NB.dateKey(now()); });
+    var step3 = fbDone ? '3 하교 후 기록<br><span>보냈어요 ✓</span>' : '<button class="btn" data-act="go" data-arg="feedback">3 하교 후 기록<br><span>' + (h >= 15 ? '지금 하기 →' : '미리 보기 →') + '</span></button>';
+    var card = b ? '<div class="postit" style="--r:-1.5deg;--d:380ms;margin:26px 24px 0;padding:14px 16px 0"><div class="tape"></div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:900">' + (todayTarget ? '오늘' : '내일') + ' 예약 · ' + esc(b.kind) + '</span><span style="font-size:12px;font-weight:700">팀 ' + NB.teamCount() + '명</span></div><div style="display:flex;align-items:baseline;gap:10px;margin-top:4px"><span class="mono" style="font-size:40px;font-weight:600;line-height:1">' + b.slot + '</span><span style="font-size:13px;font-weight:700">대기 약 ' + (br ? br.wait : 0) + '분</span></div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px -2px 14px"><button class="btn" data-act="go" data-arg="reserve" style="min-height:44px;border:2px solid var(--ink);background:var(--ink);color:var(--white);font-size:14px;font-weight:700">' + (todayTarget ? '오늘만' : '내일만') + ' 바꾸기</button><button class="btn" data-act="go" data-arg="team" style="min-height:44px;border:2px solid var(--ink);background:transparent;font-size:14px;font-weight:700">팀원 참석 확인</button></div></div>'
+      : '<div class="postit" style="--r:-1.5deg;--d:380ms;margin:26px 24px 0;padding:14px 16px 16px"><div class="tape"></div><div style="font-size:12px;font-weight:900">' + (todayTarget ? '오늘' : '내일') + ' 예약이 아직 없어요</div><div style="font-size:13px;margin-top:4px;line-height:1.5">칸을 골라 두면 팀 ' + NB.teamCount() + '명이 같이 잡혀요</div><button class="btn" data-act="go" data-arg="reserve" style="width:100%;margin-top:10px;min-height:44px;border:2px solid var(--ink);background:var(--ink);color:var(--white);font-size:14px;font-weight:700">시간 고르기</button></div>';
+    return '<div class="screen" style="min-height:0">' + headerBar(greet + esc(S.user.name || '친구')) +
+      '<div class="scroll"><ol class="steps" aria-label="진행 단계"><li class="on">1 시간 고르기<br><span>' + S.settings.deadline + '까지</span></li><li>2 점심에 가기<br><span>고른 시간에</span></li><li>' + step3 + '</li></ol>' +
+      '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-bottom:2px solid var(--line);background:var(--white)"><div style="padding:8px 20px;border-right:1px solid var(--line)"><div style="font-size:11px;font-weight:700;color:var(--grey)">' + (todayTarget ? '오늘' : '내일') + ' 메뉴 · 인기 ' + S.settings.menu.pop + '/10</div><div style="font-size:15px;font-weight:700">' + esc(S.settings.menu.name) + '</div></div><div style="padding:8px 20px"><div style="font-size:11px;font-weight:700;color:var(--grey)">예약 마감</div><div class="mono" style="font-size:15px;font-weight:600;color:var(--red)">' + dl + '</div></div></div>' +
+      '<div style="padding:12px 20px 6px;display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:15px;font-weight:900">' + (todayTarget ? '오늘' : '내일') + ' 예상 혼잡</span><span style="font-size:11px;color:var(--grey)">흰 칸 여유 · 빗금 보통 · 검정 꽉 참</span></div>' +
+      '<div style="margin:0 20px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:2px solid var(--ink);border-left:2px solid var(--ink);background:var(--white)">' + cells + '</div>' + card + '<div style="height:24px"></div></div>' + tabbar('home') + '</div>';
+  }
+  function vReserve() {
+    var t = NB.targetDate(), rows = NB.queue(t, { booking: null }), b = NB.currentBooking(t), ts = NB.teamCount();
+    var p = ui.picked ? NB.slotRow(rows, ui.picked) : null;
+    var cells = rows.map(function (r, i) { var mine = b && b.slot === r.time; var k = mine ? 'y' : r.kind; return '<button class="cell stag slotbtn k-' + k + '" style="--i:' + i + '" data-act="pick" data-arg="' + r.time + '" aria-pressed="' + (ui.picked === r.time) + '" aria-label="' + r.time + ' ' + NB.KIND_WORD[k] + ' 대기 ' + r.wait + '분"><span style="display:flex;justify-content:space-between;align-items:baseline;width:100%"><span class="mono" style="font-size:17px;font-weight:600">' + r.time + '</span><span style="font-size:11px;font-weight:700">' + NB.KIND_WORD[k] + '</span></span><span style="font-size:12px;font-weight:500">대기 ' + r.wait + '분 · ' + (r.left > 0 ? '남은 자리 ' + r.left : '마감') + '</span></button>'; }).join('');
+    var full = p && (p.kind === 'b' || p.left < ts);
+    var foot = !p ? '<div class="ghost" style="min-height:52px;font-size:14px">바꿀 시간을 위에서 골라 주세요</div>'
+      : full ? '<div class="pop"><div style="font-size:14px;font-weight:900">' + p.time + '은 꽉 찼어요 · 지금 가면 약 ' + p.wait + '분</div><button class="primary btn" data-act="rec" style="margin-top:10px;min-height:52px;font-size:15px">덜 붐비는 시간 추천 받기</button></div>'
+      : '<div class="pop"><div style="font-size:14px;font-weight:900">' + p.time + ' · 대기 약 ' + p.wait + '분 · 팀 ' + ts + '명</div><button class="primary btn" data-act="book" data-arg="' + p.time + '" style="margin-top:10px;min-height:52px;font-size:15px">' + p.time + '로 예약하기</button></div>';
+    var sheet = '';
+    if (ui.rec && p) {
+      var recs = NB.recommend(t, p.time), rot = [-2.5, 2, -1];
+      sheet = '<div style="position:absolute;inset:0;display:flex;flex-direction:column;z-index:5"><button class="dim" data-act="recClose" aria-label="추천 닫기" style="flex:1;border:0;background:rgba(17,17,17,.55)"></button><div class="sheet" style="background:var(--paper);border-top:2px solid var(--ink)"><div style="padding:8px 20px;background:var(--ink);color:var(--white);display:flex;justify-content:space-between"><span style="font-size:12px;font-weight:700">고른 시간</span><span class="mono" style="font-size:14px;font-weight:600">' + p.time + ' · 꽉 참</span></div><div style="padding:16px 20px 22px"><div style="display:flex;align-items:center;gap:12px"><span class="pop">' + bowl('shock', 60) + '</span><h2 style="margin:0;font-size:21px;font-weight:900">헉, ' + p.time + '은 꽉 찼어요</h2></div><p style="margin:4px 0 0;font-size:13px;line-height:1.55;color:#333">지금 가면 약 <b>' + p.wait + '분</b> 줄을 서요. 우리 팀 ' + ts + '명이 다 들어가는 시간을 붙여 뒀어요.</p><div style="margin-top:18px;display:flex;flex-direction:column;gap:14px">' +
+        (recs.length ? recs.map(function (r, i) { return '<button class="postit btn" data-act="choose" data-arg="' + r.time + '" style="--r:' + rot[i] + 'deg;--d:' + (120 + i * 170) + 'ms;display:grid;grid-template-columns:72px 1fr auto;align-items:center;gap:10px;min-height:66px;padding:6px 14px 0;width:100%"><span class="tape"></span><span class="mono" style="font-size:22px;font-weight:600">' + r.time + '</span><span style="display:flex;flex-direction:column;text-align:left"><b style="font-size:13px">' + r.tag + ' · 대기 ' + r.wait + '분</b><span style="font-size:12px">' + Math.max(0, p.wait - r.wait) + '분 덜 기다림 · +' + r.pt + 'P</span></span><span style="font-size:18px;font-weight:900" aria-hidden="true">→</span></button>'; }).join('') : '<div style="padding:12px;border:2px dashed var(--ink);font-size:13px;font-weight:700">지금은 팀이 다 들어가는 칸이 없어요. 대기 명단에 올려 두세요.</div>') +
+        '</div><button class="secondary btn" data-act="waitlist" data-arg="' + p.time + '" style="margin-top:16px;min-height:48px;font-size:14px">그래도 ' + p.time + ' 대기 명단에 올리기</button></div></div></div>';
+    }
+    var todayTarget = NB.isToday(t);
+    return '<div class="screen" style="position:relative"><div class="head"><div style="display:flex;justify-content:space-between;align-items:center"><button class="back btn" data-act="go" data-arg="home">← ' + (todayTarget ? '오늘' : '내일') + '</button><span class="mono" style="font-size:12px;font-weight:600;color:var(--red)">마감 ' + S.settings.deadline + '</span></div><h1>' + (todayTarget ? '오늘' : '내일') + '만 시간 바꾸기</h1><div class="sub">칸마다 예상 대기시간과 남은 자리예요 · ' + NB.fmtDateKo(t) + '</div></div>' +
+      '<div class="scroll"><div style="margin:14px 20px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:2px solid var(--ink);border-left:2px solid var(--ink)">' + cells + '</div><div style="height:12px"></div></div>' +
+      '<div style="border-top:2px solid var(--ink);background:var(--white);padding:14px 20px 20px">' + foot + '</div>' + sheet + '</div>';
+  }
+  function vConfirm() {
+    var t = NB.targetDate(), b = NB.currentBooking(t), rows = NB.queue(t), r = b ? NB.slotRow(rows, b.slot) : null;
+    var after = b ? NB.mins(b.slot) - NB.mins(S.settings.lunchStart) : 0;
+    return '<div class="screen" style="padding:0 24px 24px"><div class="scroll"><div style="padding-top:24px;display:flex;justify-content:space-between;align-items:flex-end"><div><div class="mono" style="font-size:12px;color:var(--grey)">' + NB.fmtDate(t) + ' · ' + NB.nowHHMM() + '</div><h1 style="margin:4px 0 0;font-size:24px;font-weight:900">' + (NB.isToday(t) ? '오늘' : '내일') + ' 예약 확정</h1><div style="font-size:13px;color:#333;margin-top:2px">휴대폰 내기 전에 기억해 두세요</div></div><span class="pop" style="--d:700ms">' + bowl('happy', 76) + '</span></div>' +
+      '<div class="postit" style="--r:-2deg;--d:120ms;margin-top:34px;padding:26px 18px;text-align:center"><div class="tape"></div><div style="font-size:14px;font-weight:900">급식 시간</div><div class="mono" style="font-size:80px;font-weight:600;line-height:1;margin-top:8px">' + (b ? b.slot : '--:--') + '</div><div style="font-size:17px;font-weight:900;margin-top:10px">점심시간 시작하고 ' + after + '분 뒤</div><div class="stamp" style="position:absolute;right:14px;top:14px;width:62px;height:62px;border:3px solid var(--red);display:flex;align-items:center;justify-content:center;color:var(--red);font-size:17px;font-weight:900">확정</div></div>' +
+      '<table class="kv" style="margin-top:26px"><tr class="stag" style="--i:6"><th scope="row">우리 팀</th><td>' + NB.teamCount() + '명 같이 예약됨</td></tr><tr class="stag" style="--i:8"><th scope="row">예상 대기</th><td>약 ' + (r ? r.wait : 0) + '분</td></tr><tr class="stag" style="--i:10"><th scope="row">교실 화면</th><td>' + (b ? b.slot : '') + '에 "지금 갈 팀"으로 떠요</td></tr></table></div>' +
+      '<button class="primary btn" data-act="go" data-arg="home" style="margin-top:12px">확인했어요</button></div>';
+  }
+  function vFeedback() {
+    var t = now(), tk = NB.dateKey(t), b = S.bookings[tk] || null;
+    var q = function (key, idx, title, labels) { return '<fieldset class="stag" style="--i:' + idx + ';margin:14px 0 0;padding:0;border:0"><legend style="padding:0;margin-bottom:6px;font-size:14px;font-weight:900">' + title + '</legend><div class="gridopt" style="grid-template-columns:repeat(' + labels.length + ',minmax(0,1fr))">' + labels.map(function (l) { return '<button class="btn" data-act="fb" data-key="' + key + '" data-arg="' + l + '" aria-pressed="' + (ui.fb[key] === l) + '">' + l + '</button>'; }).join('') + '</div></fieldset>'; };
+    var team = S.team.members.map(function (m) { var here = !ui.fbOut[m.name]; return '<button class="btn" data-act="fbout" data-arg="' + esc(m.name) + '" aria-pressed="' + here + '">' + (here ? '✓' : '—') + ' ' + esc(m.name) + '</button>'; }).join('');
+    return '<div class="screen"><div class="head"><button class="back btn" data-act="go" data-arg="home">← 오늘</button><h1>오늘 급식 어땠어?</h1><div class="sub">' + NB.nowHHMM() + ' · ' + (b ? '예약 ' + b.slot : '예약 없이 다녀옴') + ' · 팀 대표가 팀 대신 답해요 · 30초면 끝</div></div>' +
+      '<div class="scroll"><div style="padding:0 20px 16px">' + q('ate', 0, '1. 오늘 급식 먹었어?', ['예', '아니오']) + q('timing', 1, '2. 몇 시쯤 줄 섰어?', ['예약대로', '더 일찍', '더 늦게']) + q('bucket', 2, '3. 줄에서 얼마나 기다렸어?', ['0~3분', '3~6분', '6~10분', '10분+']) +
+      '<fieldset class="stag" style="--i:3;margin:14px 0 0;padding:0;border:0"><legend style="padding:0;margin-bottom:6px;font-size:14px;font-weight:900">4. 오늘 같이 먹은 팀원 <span style="font-size:12px;font-weight:500;color:var(--grey)">(안 온 사람은 눌러서 빼기)</span></legend><div class="gridopt" style="grid-template-columns:repeat(4,minmax(0,1fr))">' + team + '</div></fieldset></div></div>' +
+      '<div style="padding:20px">' + (ui.fb.bucket ? '<button class="primary btn" data-act="sendfb">보내기 · +5P</button>' : '<div class="ghost">3번까지 답해 주세요</div>') + '</div></div>';
+  }
+  function vRecord() {
+    var wk = NB.weekRecords(), vals = wk.map(function (d) { return d.wait == null ? 0 : d.wait; }), mx = Math.max(11, Math.max.apply(null, vals));
+    var saved = 0, cnt = 0, sum = 0;
+    wk.forEach(function (d) { if (d.wait != null) { saved += Math.max(0, (d.expected != null ? Math.max(d.expected, 10) : 10) - d.wait); cnt++; sum += d.wait; } });
+    var avg = cnt ? (sum / cnt).toFixed(1) : '—';
+    var last = S.feedback.length ? S.feedback[S.feedback.length - 1] : null;
+    var bars = wk.map(function (d, i) { var v = d.wait; var k = v == null ? 'f' : v >= 10 ? 'b' : v >= 4 ? 'm' : 'f'; return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><span class="mono" style="font-size:12px;font-weight:600;margin-bottom:3px">' + (v == null ? '·' : v) + '</span><span class="grow k-' + k + '" style="--i:' + i + ';display:block;width:100%;border:2px solid var(--ink);border-bottom:0;height:' + (v == null ? 4 : Math.max(6, Math.round(v / mx * 86))) + 'px;' + (v == null ? 'border-style:dashed;background:transparent' : '') + '"></span></div>'; }).join('');
+    var days = wk.map(function (d) { return '<span style="text-align:center;font-size:12px;font-weight:700">' + d.day + '</span>'; }).join('');
+    var streak = S.feedback.length;
+    return '<div class="screen" style="min-height:0"><div class="head"><div class="mono" style="font-size:12px;color:var(--grey)">' + now().getFullYear() + ' 2학기</div><h1>내 기록</h1></div><div class="scroll">' +
+      (ui.justSent && last ? '<div class="postit" style="--r:2deg;--d:200ms;margin:22px 24px 0;padding:12px 16px"><div class="tape"></div><div style="font-size:16px;font-weight:900">+5P · 고마워요!</div><div style="font-size:12px;margin-top:2px">오늘 약 ' + last.wait + '분 기다렸어요. 피크 시간에 갔다면 약 ' + Math.max(last.expected, 10) + '분.</div></div>' : '') +
+      '<div style="margin:16px 20px 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:2px solid var(--ink);border-left:2px solid var(--ink);background:var(--white)"><div class="stag" style="--i:1;padding:10px 6px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);text-align:center"><div class="mono" style="font-size:19px;font-weight:600">' + Math.round(saved) + '분</div><div style="font-size:11px;color:var(--grey)">이번 주 아낀 시간</div></div><div class="stag" style="--i:2;padding:10px 6px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);text-align:center"><div class="mono" style="font-size:19px;font-weight:600">' + avg + (cnt ? '분' : '') + '</div><div style="font-size:11px;color:var(--grey)">주 평균 대기</div></div><div class="stag" style="--i:3;padding:10px 6px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);text-align:center"><div class="mono" style="font-size:19px;font-weight:600">' + (S.user.points || 0) + 'P</div><div style="font-size:11px;color:var(--grey)">포인트</div></div></div>' +
+      '<div style="margin:16px 20px 0;border:2px solid var(--ink);background:var(--white);padding:12px 14px"><div style="font-size:13px;font-weight:900">이번 주 대기시간 (분)</div><div style="margin-top:10px;height:110px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;align-items:end;border-bottom:2px solid var(--ink)">' + bars + '</div><div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:4px">' + days + '</div>' + (cnt ? '' : '<div style="margin-top:8px;font-size:12px;color:var(--grey)">하교 후 기록을 보내면 여기에 쌓여요</div>') + '</div>' +
+      '<div style="margin:16px 20px 24px;display:flex;flex-wrap:wrap;gap:8px"><span class="pop chip' + (streak >= 5 ? '' : ' off') + '" style="--d:300ms">5일 연속 기록' + (streak >= 5 ? '' : ' (' + (5 - streak) + '일 남음)') + '</span><span class="pop chip' + (S.recLog.filter(function (r) { return r.accepted; }).length >= 1 ? '' : ' off') + '" style="--d:420ms">추천 수락</span><span class="pop chip' + ((S.user.points || 0) >= 50 ? '' : ' off') + '" style="--d:540ms">피드백 왕 50P</span></div></div>' + tabbar('record') + '</div>';
+  }
+  function vTeam() {
+    var rows = S.team.members.map(function (m, i) { var here = m.present !== false; return '<div class="stag" style="--i:' + i + ';display:grid;grid-template-columns:1fr auto;align-items:center;min-height:58px;padding-left:14px;border-bottom:2px solid var(--ink)"><span style="display:flex;flex-direction:column"><span style="font-size:15px;font-weight:900">' + esc(m.name) + ' <span style="font-size:11px;font-weight:700;color:var(--grey)">' + (m.lead ? '대표' : '') + '</span></span><span class="mono" style="font-size:12px;color:var(--grey)">' + esc(m.cls) + '</span></span><button class="btn" data-act="present" data-arg="' + i + '" aria-pressed="' + here + '" style="align-self:stretch;min-width:76px;border:0;border-left:2px solid var(--ink);font-size:14px;font-weight:700;' + (here ? 'background:var(--white)' : 'background:var(--ink);color:var(--white)') + '">' + (here ? '참석' : '불참') + '</button></div>'; }).join('');
+    var invite = ui.invite ? '<div class="pop" style="margin:12px 20px 0;padding:12px 14px;border:2px dashed var(--ink);background:var(--white)"><label class="field">친구 이름 (초대코드 ' + esc(S.team.code) + '를 알려 주면 친구가 직접 들어와요)<div style="display:flex;gap:8px"><input id="inviteName" class="input" type="text" value="' + esc(ui.inviteName) + '" data-bind="inviteName" placeholder="이름" style="min-height:44px;font-size:15px"><button class="btn" data-act="addMember" style="min-height:44px;padding:0 14px;border:2px solid var(--ink);background:var(--ink);color:var(--white);font-weight:700">추가</button></div></label></div>' : '';
+    return '<div class="screen" style="min-height:0"><div class="head"><div style="display:flex;justify-content:space-between;align-items:center"><span class="mono" style="font-size:12px;color:var(--grey)">초대코드</span><button class="btn mono" data-act="copy" data-arg="' + esc(S.team.code) + '" style="font-size:15px;font-weight:600;padding:2px 8px;border:2px solid var(--ink);background:var(--white)">' + esc(S.team.code) + '</button></div><h1>우리 팀 · ' + S.team.members.length + '명</h1><div class="sub">대표가 예약하면 참석 팀원 모두 같은 시간으로 잡혀요</div></div>' +
+      '<div class="scroll"><div class="list" style="margin:16px 20px 0">' + rows + '</div>' + invite + '<div style="padding:16px 20px 24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><button class="btn" data-act="inviteToggle" style="min-height:50px;border:2px solid var(--ink);background:var(--ink);color:var(--white);font-size:14px;font-weight:700">팀원 초대</button><button class="btn" data-act="leadNext" style="min-height:50px;border:2px solid var(--ink);background:var(--white);font-size:14px;font-weight:700">대표 바꾸기</button></div></div>' + tabbar('team') + '</div>';
+  }
+  function vRecurring() {
+    var per = ['1주', '1개월', '학기'].map(function (l) { return '<button class="btn" data-act="period" data-arg="' + l + '" aria-pressed="' + (S.recurring.period === l) + '">' + l + '</button>'; }).join('');
+    var days = ['월', '화', '수', '목', '금'];
+    var rows = days.map(function (d, i) { var p = S.recurring.days[d] || ['', '', '']; return '<tr class="stag" style="--i:' + i + '"><th scope="row" style="border:2px solid var(--ink);height:42px;font-size:14px;font-weight:900">' + d + '</th>' + [0, 1, 2].map(function (j) { var on = ui.editDay && ui.editDay.d === d && ui.editDay.j === j; return '<td style="border:2px solid var(--ink);padding:0;' + (j === 0 ? 'background:var(--yellow)' : '') + '"><button class="btn mono" data-act="editDay" data-d="' + d + '" data-j="' + j + '" aria-pressed="' + on + '" style="width:100%;height:42px;border:0;background:transparent;font-size:15px;font-weight:' + (j === 0 ? 600 : 500) + ';' + (on ? 'box-shadow:inset 0 0 0 3px #2457D6' : '') + '">' + (p[j] || '—') + '</button></td>'; }).join('') + '</tr>'; }).join('');
+    var picker = '';
+    if (ui.editDay) {
+      picker = '<div class="pop" style="margin:14px 20px 0;padding:12px 14px;border:2px solid var(--ink);background:var(--white)"><div style="font-size:13px;font-weight:900">' + ui.editDay.d + '요일 ' + (ui.editDay.j + 1) + '순위 시간</div><div class="gridopt" style="margin-top:8px;grid-template-columns:repeat(5,minmax(0,1fr))">' + NB.slots().map(function (s) { return '<button class="btn mono" data-act="setDay" data-arg="' + s + '">' + s + '</button>'; }).join('') + '</div><button class="btn" data-act="setDay" data-arg="" style="margin-top:8px;min-height:36px;border:2px dashed var(--ink);background:var(--white);font-size:12px;font-weight:700;width:100%">이 순위 비우기</button></div>';
+    }
+    return '<div class="screen" style="min-height:0"><div class="head"><div class="mono" style="font-size:12px;color:var(--grey)">' + now().getFullYear() + '.' + NB.pad(now().getMonth() + 1) + ' · 팀 ' + NB.teamCount() + '명</div><h1>정기 예약</h1><div class="sub">한 번 정하면 매일 아침 자동으로 예약돼요 · 칸을 눌러 바꾸기</div></div>' +
+      '<div class="scroll"><div style="padding:14px 20px 0"><div class="seg" role="group" aria-label="기간" style="grid-template-columns:repeat(3,minmax(0,1fr))">' + per + '</div></div>' +
+      '<div style="padding:14px 20px 0"><table style="width:100%;border-collapse:collapse;background:var(--white);text-align:center"><tr><th scope="col" style="border:2px solid var(--ink);padding:6px 0;background:var(--ink);color:var(--white);font-size:12px;width:44px">요일</th><th scope="col" style="border:2px solid var(--ink);padding:6px 0;background:var(--ink);color:var(--white);font-size:12px">1순위</th><th scope="col" style="border:2px solid var(--ink);padding:6px 0;background:var(--ink);color:var(--white);font-size:12px">2순위</th><th scope="col" style="border:2px solid var(--ink);padding:6px 0;background:var(--ink);color:var(--white);font-size:12px">3순위</th></tr>' + rows + '</table></div>' + picker +
+      '<div class="postit" style="--r:1deg;--d:400ms;margin:22px 24px 24px;padding:12px 14px;font-size:12px;line-height:1.6"><div class="tape"></div><b style="font-size:13px">이렇게 배정돼요</b><br>자리의 ' + Math.round(S.settings.ratio * 100) + '%까지만 정기 예약으로 채워요 · 1순위를 못 받은 달은 다음 달 먼저 · 시험과 행사 날은 자동으로 쉬어요</div></div>' + tabbar('recurring') + '</div>';
+  }
+  function vSettings() {
+    var u = S.user;
+    var tg = function (key, label, sub) { return '<div style="display:flex;justify-content:space-between;align-items:center;min-height:56px;padding:0 14px;border-bottom:2px solid var(--ink)"><span style="display:flex;flex-direction:column"><b style="font-size:14px">' + label + '</b><span style="font-size:12px;color:var(--grey)">' + sub + '</span></span><button class="switch" role="switch" aria-checked="' + !!u[key] + '" aria-label="' + label + '" data-act="toggle" data-arg="' + key + '"><span class="knob"></span></button></div>'; };
+    var privacy = ui.privacy ? '<div class="pop" style="margin:12px 20px 0;padding:14px;border:2px solid var(--ink);background:var(--white);font-size:13px;line-height:1.6"><b>개인정보 처리 안내</b><br>저장: 학교 이메일(가입 확인용), 학년·반, 팀, 예약 칸, 하교 후 응답<br>저장하지 않음: 위치, 사진, 연락처, 실명(선택)<br>보관: 학기 종료 시 개인 기록 삭제, 통계만 남김<br>도입: 학교운영위원회 심의 후 운영</div>' : '';
+    return '<div class="screen" style="min-height:0"><div class="head"><h1 style="margin:0">설정</h1></div><div class="scroll">' +
+      '<div style="margin:16px 20px 0;border:2px solid var(--ink);background:var(--white);padding:12px 14px;display:flex;align-items:center;gap:12px"><span aria-hidden="true" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--yellow);border:2px solid var(--ink);font-size:18px;font-weight:900">' + esc((u.name || '나').slice(0, 1)) + '</span><div style="min-width:0"><div style="font-size:15px;font-weight:900">' + esc(u.name || '친구') + ' · ' + esc(u.grade) + '학년 ' + esc(u.cls) + '반</div><div class="mono" style="font-size:12px;color:var(--grey);overflow:hidden;text-overflow:ellipsis">' + esc(u.email) + '</div></div></div>' +
+      '<div class="list" style="margin:16px 20px 0">' + tg('notif1', '전날 밤 예약 알림', '21:00 · 내일 메뉴와 혼잡 예상') + tg('notif2', '마감 알림', '07:00 · 휴대폰 내기 30분 전') + '</div>' +
+      '<div class="list" style="margin:16px 20px 0"><button class="row btn" data-act="replayIntro" style="min-height:56px;background:var(--yellow);font-size:15px;font-weight:900"><span>사용법 다시 보기</span><span aria-hidden="true">→</span></button><button class="row btn" data-act="go" data-arg="recurring"><span>정기 예약 관리</span><span aria-hidden="true">→</span></button><button class="row btn" data-act="go" data-arg="team"><span>팀 관리</span><span aria-hidden="true">→</span></button><button class="row btn" data-act="privacy"><span>개인정보 처리 안내</span><span aria-hidden="true">' + (ui.privacy ? '↑' : '→') + '</span></button>' + (NBSync.active ? '<button class="row btn" data-act="nav" data-arg="admin"><span>관리자 웹 열기</span><span aria-hidden="true">→</span></button>' : '') + '<button class="row btn" data-act="logout" style="color:var(--red)">로그아웃</button></div>' + privacy +
+      '<div style="margin:16px 20px 24px;font-size:11px;color:var(--grey);line-height:1.6">눈치밥 nunchi-bap · 마송고등학교 모의창업 · ' + (NBSync.active ? '시연 데이터는 학교 서버 한 곳에 모여 관리자 화면과 같이 보여요' : '시연 데이터는 이 기기에만 저장돼요') + '</div></div>' + tabbar('settings') + '</div>';
+  }
+  function tabbar(cur) {
+    var t = [['home', '오늘'], ['recurring', '정기'], ['team', '팀'], ['record', '기록'], ['settings', '설정']];
+    return '<nav class="tabbar" aria-label="하단 메뉴">' + t.map(function (x) { return '<button class="btn" data-act="go" data-arg="' + x[0] + '" aria-current="' + (cur === x[0] ? 'page' : 'false') + '">' + x[1] + '</button>'; }).join('') + '</nav>';
+  }
+
+  var views = { splash: vSplash, email: vEmail, nope: vNope, code: vCode, profile: vProfile, intro: vIntro, home: vHome, reserve: vReserve, confirm: vConfirm, feedback: vFeedback, record: vRecord, team: vTeam, recurring: vRecurring, settings: vSettings };
+  var app = document.getElementById('root');
+  var lastKey = null;
+  var DESK = window.matchMedia('(min-width:1024px)');
+  var TAB = window.matchMedia('(min-width:600px)');
+  var MAIN = ['home', 'reserve', 'confirm', 'feedback', 'record', 'team', 'recurring', 'settings'];
+  var NAV = [['home', '오늘'], ['recurring', '정기'], ['team', '팀'], ['record', '기록'], ['settings', '설정']];
+
+  /* 데스크톱 로그인 전: 왼쪽 브랜드 패널 */
+  function brandPanel() {
+    var dl = S.settings.deadline;
+    return '<section class="da-brand">' + bowl('glance', 200) +
+      '<h1>눈치밥</h1><div class="mono" style="font-size:20px;font-weight:600;margin-top:8px">nunchi-bap</div>' +
+      '<div class="postit" style="--r:-2deg;--d:300ms;margin-top:36px;padding:22px 24px 18px;width:max-content;max-width:100%"><div class="tape"></div><div style="font-size:26px;font-weight:900">눈치 보지 말고, 눈치 있게</div><div style="font-size:16px;margin-top:6px">밥 먹을 타이밍, 눈치밥이 알려 줄게!</div></div>' +
+      '<div class="da-steps"><div><span class="t">~' + esc(dl) + '</span><span class="w">아침에 고르기</span><span class="s">휴대폰 내기 전 칸 하나</span></div><div><span class="t">' + esc(S.settings.lunchStart) + '~</span><span class="w">점심엔 그냥 가기</span><span class="s">교실 화면에 갈 팀이 떠요</span></div><div><span class="t">하교 후</span><span class="w">세 번 누르기</span><span class="s">내일 예측이 정확해져요</span></div></div></section>';
+  }
+  /* 데스크톱 첫 카드: 브랜드는 왼쪽에 있으니 시작 버튼만 */
+  function vSplashCard() {
+    return '<div class="screen" style="padding:40px 36px 36px"><div style="flex:1;display:flex;flex-direction:column;justify-content:center">' +
+      '<div class="mono" style="font-size:12px;color:var(--grey)">' + esc(S.settings.schoolName) + ' 외 학교용</div>' +
+      '<h2 style="margin:6px 0 0;font-size:32px;font-weight:900;letter-spacing:-1px;line-height:1.25">급식 줄,<br>이제 눈치 보지 마세요</h2>' +
+      '<p style="margin:14px 0 0;font-size:15px;line-height:1.7;color:#333">점심시간을 5분 칸으로 나누고, 꽉 찬 칸은 덜 붐비는 칸으로 추천해요. 학교 이메일로 가입하면 우리 학교 혼잡 예상을 바로 볼 수 있어요.</p>' +
+      '<div style="margin-top:28px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:2px solid var(--ink);border-left:2px solid var(--ink);background:var(--white)">' +
+      ['f', 'm', 'b', 'b', 'm', 'y', 'f', 'f', 'f', 'f'].map(function (k, j) { return '<span class="stag k-' + k + '" style="--i:' + j + ';display:block;height:36px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink)"></span>'; }).join('') + '</div></div>' +
+      '<button class="primary btn" data-act="go" data-arg="email">학교 이메일로 시작하기</button><p style="margin:10px 0 0;font-size:12px;color:var(--grey);text-align:center">학교에서 받은 이메일만 쓸 수 있어요</p></div>';
+  }
+  function deskAuth() {
+    var body = ui.screen === 'splash' ? vSplashCard() : views[ui.screen]();
+    return '<div class="da">' + brandPanel() + '<section class="da-card">' + body + '</section></div>';
+  }
+  function deskMain() {
+    var cur = ui.screen === 'home' ? 'reserve' : ui.screen;
+    var navCur = ['home', 'reserve', 'confirm', 'feedback'].indexOf(ui.screen) >= 0 ? 'home' : ui.screen;
+    var u = S.user;
+    var nav = NAV.map(function (x) { return '<button class="btn" data-act="go" data-arg="' + x[0] + '" aria-current="' + (navCur === x[0] ? 'page' : 'false') + '">' + x[1] + '</button>'; }).join('');
+    return '<div class="dw"><header class="dw-top"><div class="dw-brand">' + LOGO + '<span>눈치밥</span><span class="mono">nunchi-bap</span></div><nav class="dw-nav" aria-label="메뉴">' + nav + '</nav>' +
+      '<div class="dw-me"><span><b>' + esc(u.name || '친구') + '</b> · ' + esc(S.settings.schoolName) + ' ' + esc(u.grade) + '-' + esc(u.cls) + '</span>' + (NBSync.active ? '<button class="btn" data-act="nav" data-arg="admin">관리자 웹 →</button>' : '') + '</div></header>' +
+      '<div class="dw-body"><section class="pane pane-today" aria-label="오늘">' + vHome() + '</section><section class="pane pane-work">' + views[cur]() + '</section></div></div>';
+  }
+
+  function render() {
+    S = NB.load();
+    if (!S.user && MAIN.indexOf(ui.screen) >= 0) ui.screen = 'splash';
+    if (S.user) NB.ensureTeam();
+    var focusId = document.activeElement && document.activeElement.id, selStart = null;
+    try { if (focusId && document.activeElement.selectionStart != null) selStart = document.activeElement.selectionStart; } catch (e) { /* 무시 */ }
+    var mode = DESK.matches ? 'desk' : TAB.matches ? 'tab' : 'phone';
+    var html;
+    if (NBSync.active && !NBSync.ready) html = '<div class="m-full" style="align-items:center;justify-content:center">' + bowl('glance', 96) + '<p class="mono" style="margin:12px 0 0;font-size:13px;color:var(--grey)">불러오는 중…</p></div>';
+    else if (mode === 'desk') html = MAIN.indexOf(ui.screen) >= 0 && S.user ? deskMain() : deskAuth();
+    else html = '<div class="' + (mode === 'tab' ? 'm-desk' : 'm-full') + '"><div class="phone">' + views[ui.screen]() + '</div></div>';
+    if (ui.toast) html += '<div class="toast" role="status">' + esc(ui.toast) + '</div>';
+    /* 같은 화면 안의 갱신이면 등장 애니메이션을 다시 돌리지 않는다 */
+    var scrolls = [].map.call(app.querySelectorAll('.scroll'), function (el) { return el.scrollTop; });
+    var key = mode + ':' + ui.screen;
+    app.innerHTML = html;
+    if (lastKey === key) {
+      app.querySelectorAll('.screen,.stag,.postit,.pop,.grow,.slide,.sheet,.dim,.stamp').forEach(function (el) { el.style.animation = 'none'; });
+      app.querySelectorAll('.scroll').forEach(function (el, i) { if (scrolls[i]) el.scrollTop = scrolls[i]; });
+    }
+    lastKey = key;
+    if (focusId) { var el = document.getElementById(focusId); if (el) { el.focus(); try { if (selStart != null) el.setSelectionRange(selStart, selStart); } catch (e) { /* 무시 */ } } }
+  }
+  function toast(msg) { ui.toast = msg; render(); clearTimeout(toast.t); toast.t = setTimeout(function () { ui.toast = null; render(); }, 2200); }
+  function go(s) { ui.screen = s; ui.picked = null; ui.rec = false; ui.justSent = ui.justSent && s === 'record'; lastKey = null; render(); }
+  DESK.addEventListener('change', function () { lastKey = null; render(); });
+  TAB.addEventListener('change', function () { lastKey = null; render(); });
+
+  app.addEventListener('input', function (e) {
+    var b = e.target.getAttribute('data-bind'); if (!b) return;
+    var v = e.target.value; if (b === 'code') v = v.replace(/[^0-9]/g, '').slice(0, 6);
+    ui[b] = v; render();
+  });
+  app.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]'); if (!el) return;
+    var act = el.getAttribute('data-act'), arg = el.getAttribute('data-arg');
+    var t = NB.targetDate();
+    switch (act) {
+      case 'go': go(arg); break;
+      case 'nav': NBSync.nav(arg); break;
+      case 'fill': ui.email = arg; render(); break;
+      case 'fillcode': ui.code = '482913'; render(); break;
+      case 'request': S.requests.push({ domain: emailKind().dom, at: new Date().toISOString() }); NB.save(); toast('도입 요청을 보냈어요. 선생님께 전해 주세요!'); break;
+      case 'grade': ui.grade = arg; render(); break;
+      case 'cls': ui.cls = arg; render(); break;
+      case 'signup':
+        S.user = { email: ui.email.trim().toLowerCase(), grade: ui.grade, cls: ui.cls, name: ui.name.trim(), points: 0, notif1: true, notif2: true, introDone: false, createdAt: new Date().toISOString() };
+        S.team.members = []; NB.ensureTeam(); NB.save(); ui.intro = 0; ui.introFrom = 'signup'; go('intro'); break;
+      case 'introNext': if (ui.intro < 3) { ui.intro++; render(); } else endIntro(); break;
+      case 'introEnd': endIntro(); break;
+      case 'replayIntro': ui.intro = 0; ui.introFrom = 'settings'; go('intro'); break;
+      case 'pick': ui.picked = arg; ui.rec = false; render(); break;
+      case 'rec': ui.rec = true; render(); break;
+      case 'recClose': ui.rec = false; render(); break;
+      case 'book': NB.book(t, arg, NB.isToday(t) ? '오늘만 변경' : '내일만 변경'); go('confirm'); break;
+      case 'choose': { var from = ui.picked; NB.book(t, arg, '추천 수락'); S.recLog.push({ date: NB.dateKey(t), from: from, to: arg, accepted: true }); S.user.points = (S.user.points || 0) + (NB.recommend(t, from)[0] && NB.recommend(t, from)[0].time === arg ? 10 : 5); NB.save(); go('confirm'); break; }
+      case 'waitlist': S.waitlist[NB.dateKey(t)] = arg; S.recLog.push({ date: NB.dateKey(t), from: arg, to: null, accepted: false }); NB.save(); ui.rec = false; ui.picked = null; toast(arg + ' 대기 명단에 올렸어요. 자리가 나면 ' + S.settings.deadline + ' 전에 알려 줄게요.'); break;
+      case 'fb': ui.fb[el.getAttribute('data-key')] = arg; render(); break;
+      case 'fbout': ui.fbOut[arg] = !ui.fbOut[arg]; render(); break;
+      case 'sendfb': { var present = S.team.members.filter(function (m) { return !ui.fbOut[m.name]; }).map(function (m) { return m.name; }); NB.sendFeedback(now(), { ate: ui.fb.ate, timing: ui.fb.timing, bucket: ui.fb.bucket, present: present }); ui.justSent = true; ui.fb = { ate: '예', timing: '예약대로', bucket: null }; ui.fbOut = {}; ui.screen = 'record'; render(); break; }
+      case 'present': S.team.members[+arg].present = S.team.members[+arg].present === false; NB.save(); render(); break;
+      case 'inviteToggle': ui.invite = !ui.invite; render(); break;
+      case 'addMember': if (ui.inviteName.trim()) { S.team.members.push({ name: ui.inviteName.trim(), cls: S.user.grade + '-' + S.user.cls, lead: false, present: true }); NB.save(); ui.inviteName = ''; ui.invite = false; toast('팀에 추가했어요'); } break;
+      case 'leadNext': { var ms = S.team.members, li = -1; ms.forEach(function (m, i) { if (m.lead) li = i; }); if (ms.length > 1) { ms.forEach(function (m) { m.lead = false; }); ms[(li + 1) % ms.length].lead = true; NB.save(); toast(ms[(li + 1) % ms.length].name + '이(가) 대표가 됐어요'); } break; }
+      case 'copy': try { navigator.clipboard.writeText(arg).then(function () { toast('초대코드를 복사했어요'); }, function () { toast('초대코드 ' + arg); }); } catch (x) { toast('초대코드 ' + arg); } break;
+      case 'period': S.recurring.period = arg; NB.save(); render(); break;
+      case 'editDay': { var d = el.getAttribute('data-d'), j = +el.getAttribute('data-j'); ui.editDay = ui.editDay && ui.editDay.d === d && ui.editDay.j === j ? null : { d: d, j: j }; render(); break; }
+      case 'setDay': if (ui.editDay) { var arr = (S.recurring.days[ui.editDay.d] || ['', '', '']).slice(); arr[ui.editDay.j] = arg; S.recurring.days[ui.editDay.d] = arr; /* 자동 예약은 다시 계산 */ Object.keys(S.bookings).forEach(function (k) { if (S.bookings[k].auto) delete S.bookings[k]; }); NB.save(); ui.editDay = null; render(); } break;
+      case 'toggle': S.user[arg] = !S.user[arg]; NB.save(); render(); break;
+      case 'privacy': ui.privacy = !ui.privacy; render(); break;
+      case 'logout': S.user = null; NB.save(); ui.email = ''; ui.code = ''; ui.intro = 0; go('splash'); break;
+    }
+  });
+  function endIntro() { if (!S.user.introDone) { S.user.introDone = true; NB.save(); } go(ui.introFrom === 'settings' ? 'settings' : 'home'); }
+
+  window.addEventListener('storage', function (e) { if (!NBSync.active && e.key === NB.KEY) { NB.reload(); render(); } });
+  NBSync.init(function (first) {
+    S = NB.load();
+    if (first && S.user && S.user.introDone && ['splash', 'email', 'code', 'profile', 'nope'].indexOf(ui.screen) >= 0) ui.screen = 'home';
+    render();
+  });
+  render();
+  setInterval(function () { if (ui.screen === 'home') render(); }, 60000);
+})();
+</script>
+
+</body>
+</html>

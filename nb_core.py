@@ -69,7 +69,9 @@ def load() -> dict:
 
 
 def save(st: dict) -> None:
+    """저장할 때마다 _rev를 1 올린다. 화면(HTML)은 rev가 바뀌면 새 상태를 받아 다시 그린다."""
     with _LOCK:
+        st["_rev"] = int(st.get("_rev", 0) or 0) + 1
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         tmp = DATA_FILE.with_suffix(".tmp")
         tmp.write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")

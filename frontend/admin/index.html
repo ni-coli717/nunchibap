@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>눈치밥 관리자</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 레이아웃: 검정 사이드바 + 종이색 본문, 좁은 화면에서는 위아래로 쌓인다 */
+:root{--paper:#F4F3EF;--ink:#111111;--white:#FFFFFF;--yellow:#FFE14D;--grey:#555555;--mute:#6B6B6B;--red:#B42318;--tape:rgba(226,219,198,.9);--stripe:repeating-linear-gradient(135deg,#FFFFFF 0px,#FFFFFF 4px,#9A9A9A 4px,#9A9A9A 5.5px);--sans:'Noto Sans KR',Arial,sans-serif;--mono:'IBM Plex Mono','Courier New',monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;color:inherit;cursor:pointer;border-radius:0}
+input{font-family:inherit;color:var(--ink);border-radius:0}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #2457D6;outline-offset:1px}
+@keyframes adIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes adStick{0%{opacity:0;transform:translateY(-34px) rotate(calc(var(--r,0deg) - 10deg)) scale(1.06)}55%{opacity:1;transform:translateY(4px) rotate(calc(var(--r,0deg) + 3deg)) scale(1)}78%{transform:translateY(-1px) rotate(calc(var(--r,0deg) - 1.2deg))}100%{transform:rotate(var(--r,0deg))}}
+@keyframes adGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes adPop{0%{opacity:0;transform:scale(.7)}70%{opacity:1;transform:scale(1.06)}100%{transform:none}}
+.screen{animation:adIn 300ms cubic-bezier(.2,.8,.2,1) both}
+.stag{animation:adIn 340ms cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 40ms)}
+.postit{position:relative;background:var(--yellow);border:3px solid var(--ink);color:var(--ink);transform:rotate(var(--r,0deg));transform-origin:50% 0;animation:adStick 620ms cubic-bezier(.2,.8,.2,1) backwards;animation-delay:var(--d,0ms);transition:transform .22s}
+.postit:hover{transform:rotate(0deg) translateY(-3px)}
+.tape{position:absolute;top:-14px;left:50%;width:64px;height:22px;margin-left:-32px;background:var(--tape);transform:rotate(-4deg);pointer-events:none}
+.grow{transform-origin:50% 100%;animation:adGrow 520ms cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 45ms)}
+.pop{animation:adPop 380ms cubic-bezier(.2,.8,.2,1) backwards;animation-delay:var(--d,0ms)}
+.btn{transition:transform .08s ease,background-color .15s,color .15s}.btn:active{transform:translateY(2px)}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.mono{font-family:var(--mono)}
+.wrap{height:100%;display:grid;grid-template-columns:248px minmax(0,1fr)}
+aside{min-height:0;overflow-y:auto;background:var(--ink);color:var(--white);padding:22px 16px;display:flex;flex-direction:column;gap:4px}
+main{min-height:0;min-width:0;overflow-y:auto;padding:28px 40px 48px}
+.main-in{max-width:1440px;margin:0 auto}
+.side-link{margin-top:10px;padding:10px;border:1px solid #3A3A38;background:transparent;color:#FFF;font-size:12px;font-weight:700;text-align:center}
+.menu .ext{opacity:.85}
+.menu .ext::after{content:'↗';margin-left:auto;font-size:12px}
+@media (min-width:1600px){main{padding:36px 56px 56px}}
+@media (max-width:899px){
+ .wrap{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+ aside{flex-direction:row;align-items:center;gap:6px;padding:8px 12px;overflow-x:auto;overflow-y:hidden}
+ aside .brand{padding:0 8px 0 0!important;flex:none}
+ aside .brand .sub,#sideFoot{display:none}
+ .menu{display:flex;gap:2px}
+ .menu button{width:auto!important;white-space:nowrap;min-height:40px!important}
+ .side-link{margin:0;flex:none;white-space:nowrap}
+ main{padding:20px 16px 40px}
+}
+.menu button{display:flex;gap:10px;align-items:center;min-height:44px;padding:0 12px;border:0;text-align:left;font-size:14px;font-weight:500;background:transparent;color:var(--white);width:100%}
+.menu button[aria-current="page"]{background:var(--yellow);color:var(--ink);font-weight:900}
+.title{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:14px}
+.title h1{margin:4px 0 0;font-size:28px;font-weight:900;letter-spacing:-.5px}
+.title .sub{font-size:13px;color:#444;margin-top:2px}
+.eyebrow{font-family:var(--mono);font-size:12px;color:var(--grey)}
+.card{border:2px solid var(--ink);background:var(--white);min-width:0}
+.card .ch{padding:10px 16px;border-bottom:2px solid var(--ink);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.card .ch b{font-size:15px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:48px;padding:8px 16px;border-bottom:2px solid var(--ink)}
+.row:last-child{border-bottom:0}
+.dashgrid{display:grid;gap:20px;grid-template-columns:minmax(0,1fr);align-items:start}
+.dashside{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));align-items:start}
+@media (min-width:1200px){.dashgrid{grid-template-columns:minmax(0,1fr) 340px}.dashside{grid-template-columns:minmax(0,1fr);padding-top:6px}}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;align-items:start}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));border-top:2px solid var(--ink);border-left:2px solid var(--ink);background:var(--white)}
+.kpi{padding:14px 16px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+.kpi .l{font-size:12px;font-weight:700;color:var(--grey)}.kpi .v{font-family:var(--mono);font-size:26px;font-weight:600;margin-top:4px}.kpi .s{font-size:12px;color:#444;margin-top:2px}
+.seg{display:grid;border:2px solid var(--ink);background:var(--white)}
+.seg button,.segrow button{min-height:40px;padding:0 12px;border:0;border-right:2px solid var(--ink);background:var(--white);font-size:13px;font-weight:500}
+.seg button:last-child,.segrow button:last-child{border-right:0}
+.seg button[aria-pressed="true"],.segrow button[aria-pressed="true"]{background:var(--ink);color:var(--white);font-weight:700}
+.segrow{display:flex;flex-wrap:wrap;border:2px solid var(--ink);background:var(--white)}
+.field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#333}
+.input{min-height:42px;width:100%;padding:0 12px;border:2px solid var(--ink);background:var(--white);font-size:14px}
+.primary{min-height:42px;padding:0 16px;border:2px solid var(--ink);background:var(--ink);color:var(--white);font-size:14px;font-weight:700}
+.secondary{min-height:42px;padding:0 14px;border:2px solid var(--ink);background:var(--white);font-size:13px;font-weight:700}
+.accent{min-height:42px;padding:0 14px;border:2px solid var(--ink);background:var(--yellow);font-size:13px;font-weight:700}
+.switch{position:relative;flex:none;width:52px;height:30px;padding:0;border:2px solid var(--ink);background:var(--white);transition:background-color .2s}
+.switch[aria-checked="true"]{background:var(--ink)}
+.switch .knob{position:absolute;top:3px;left:3px;width:20px;height:20px;background:var(--ink);transition:left .2s}
+.switch[aria-checked="true"] .knob{left:25px;background:var(--yellow)}
+.badge{font-size:12px;font-weight:700;padding:4px 8px}
+.badge.ok{background:var(--ink);color:var(--yellow)}.badge.wait{border:2px dashed var(--ink)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9;padding:12px 16px;background:var(--ink);color:var(--yellow);font-size:13px;font-weight:700;animation:adIn 240ms ease both}
+.board{border:3px solid var(--ink);background:var(--white);max-width:900px}
+.board .bh{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 22px;background:var(--ink);color:var(--white);flex-wrap:wrap}
+.brow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 22px;border-bottom:2px solid var(--ink);transition:background-color .3s;flex-wrap:wrap}
+.brow.go{background:var(--yellow)}.brow.past{color:#8A8A86}
+.chip{font-size:15px;font-weight:900;padding:6px 12px;border:2px solid var(--ink)}
+.brow.go .chip{background:var(--ink);color:var(--yellow)}.brow.past .chip{border-color:#C9C9C9;color:#8A8A86}
+.kiosk{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important}
+.kiosk aside,.kiosk .title,.kiosk .controls{display:none!important}
+.kiosk main{padding:0}
+.kiosk .main-in{max-width:none;min-height:100%;display:flex;flex-direction:column}
+.kiosk .screen{flex:1;display:flex;flex-direction:column}
+.kiosk .board{max-width:none;flex:1;margin-top:0!important;border:0;display:flex;flex-direction:column}
+.kiosk .brow{flex:1 1 0;max-height:180px}
+.board{max-width:1100px}
+.kiosk .bh{padding:22px 32px;font-size:1.4em}
+.kiosk .brow{padding:26px 32px}
+.kiosk .brow .t{font-size:40px}.kiosk .brow .tm{font-size:26px}.kiosk .chip{font-size:22px}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+<aside>
+  <div class="brand" style="display:flex;align-items:center;gap:10px;padding:0 6px 18px"><svg width="54" height="24" viewBox="0 0 150 66" role="img" aria-label="눈치밥"><g fill="#111" stroke="#FFF" stroke-width="6"><rect x="4" y="4" width="28" height="29"/><rect x="32" y="4" width="29" height="29" fill="#FFF"/><rect x="61" y="4" width="29" height="29" fill="#FFF"/><rect x="90" y="4" width="29" height="29"/><rect x="119" y="4" width="27" height="29"/><rect x="4" y="33" width="28" height="29"/><rect x="32" y="33" width="29" height="29"/><rect x="61" y="33" width="29" height="29"/><rect x="90" y="33" width="29" height="29" fill="#FFE14D"/><rect x="119" y="33" width="27" height="29"/></g></svg><div><div style="font-size:17px;font-weight:900;letter-spacing:-.5px">눈치밥 관리자</div><div id="schoolLine" class="sub" style="font-size:11px;color:#BDBDB8">마송고등학교 · 영양교사</div></div></div>
+  <nav class="menu" aria-label="관리자 메뉴" id="menu"></nav>
+  <div style="margin-top:auto;padding:12px 10px 0;border-top:1px solid #3A3A38;font-size:11px;line-height:1.6;color:#BDBDB8" id="sideFoot"></div>
+  <button class="side-link btn" data-act="toStudent">학생 앱 열기 →</button>
+</aside>
+<main id="main"></main>
+</div>
+<script src="nb-core.js"></script>
+<script src="nb-bridge.js"></script>
+<script>
+(function () {
+  'use strict';
+  var S = NB.load();
+  var TABS = [['setup', '01', '학교 설정'], ['dash', '02', '오늘 대시보드'], ['board', '03', '교실 배정표'], ['rules', '04', '운영 규칙'], ['report', '05', '리포트']];
+  var ui = { tab: 'setup', newDomain: '', testEmail: 's25012@masong.hs.kr', boardClass: '2학년 3반', now: null, toast: null, kiosk: false, saved: false };
+  var h = (location.hash || '').replace('#', '');
+  if (h === 'kiosk') { ui.kiosk = true; ui.tab = 'board'; } else if (TABS.some(function (t) { return t[0] === h; })) ui.tab = h;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function now() { return new Date(); }
+  function title(no, name, sub, right) { return '<div class="title"><div><div class="eyebrow">' + no + '</div><h1>' + name + '</h1><div class="sub">' + sub + '</div></div>' + (right || '') + '</div>'; }
+  function tg(key, label, sub) { return '<div class="row"><span style="display:flex;flex-direction:column"><b style="font-size:13px">' + label + '</b><span style="font-size:12px;color:var(--grey)">' + sub + '</span></span><button class="switch" role="switch" aria-checked="' + !!S.settings[key] + '" aria-label="' + label + '" data-act="toggle" data-arg="' + key + '"><span class="knob"></span></button></div>'; }
+  function seg(label, key, values, fmt, cls) { return '<div><div style="font-size:12px;font-weight:700;color:#333;margin-bottom:6px">' + label + '</div><div class="seg" role="group" aria-label="' + label + '" style="grid-template-columns:repeat(' + values.length + ',minmax(0,1fr))">' + values.map(function (v) { return '<button class="btn ' + (cls || '') + '" data-act="set" data-key="' + key + '" data-arg="' + v + '" aria-pressed="' + (String(S.settings[key]) === String(v)) + '">' + (fmt ? fmt(v) : v) + '</button>'; }).join('') + '</div></div>'; }
+  var bowlShock = '<svg width="56" height="42" viewBox="0 0 128 96" role="img" aria-label="놀란 밥그릇" style="flex:none"><path d="M14 30 H114 L102 78 H26 Z" fill="#FFF" stroke="#111" stroke-width="5"/><path d="M22 30 C30 10, 98 10, 106 30" fill="#FFF" stroke="#111" stroke-width="5"/><rect x="38" y="80" width="52" height="12" fill="#111"/><rect x="40" y="36" width="20" height="22" fill="#FFF" stroke="#111" stroke-width="5"/><rect x="70" y="36" width="20" height="22" fill="#FFF" stroke="#111" stroke-width="5"/><rect x="46" y="43" width="8" height="8" fill="#111"/><rect x="76" y="43" width="8" height="8" fill="#111"/><rect x="58" y="62" width="12" height="10" fill="#FFF" stroke="#111" stroke-width="5"/></svg>';
+
+  function vSetup() {
+    var s = S.settings;
+    var doms = s.domains.map(function (d, i) { return '<div class="row stag" style="--i:' + i + '"><span class="mono" style="font-size:15px;font-weight:600">@' + esc(d.name) + '</span><span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="badge ' + (d.ok ? 'ok' : 'wait') + '">' + (d.ok ? '인증됨' : '확인 중') + '</span>' + (d.ok ? '' : '<button class="primary btn" data-act="verify" data-arg="' + i + '" style="min-height:34px;padding:0 10px;font-size:12px">학교 목록과 대조</button>') + '<button class="secondary btn" data-act="removeDomain" data-arg="' + i + '" aria-label="' + esc(d.name) + ' 삭제" style="min-height:34px;padding:0 10px;font-size:12px">삭제</button></span></div>'; }).join('');
+    var te = (ui.testEmail || '').trim().toLowerCase(), at = te.indexOf('@'), td = at > 0 ? te.slice(at + 1) : '';
+    var hit = null; s.domains.forEach(function (d) { if (d.name === td) hit = d; });
+    var test = !te || !td ? ['이메일을 넣으면 가입 가능 여부를 보여줘요', 'margin-top:8px;font-size:12px;color:var(--grey)'] : hit && hit.ok ? ['✓ 가입 가능 · ' + esc(s.schoolName) + ' 학생으로 등록돼요', 'margin-top:8px;padding:8px 10px;background:var(--ink);color:var(--yellow);font-size:13px;font-weight:700'] : hit ? ['도메인 확인 중이라 아직 가입할 수 없어요', 'margin-top:8px;padding:8px 10px;border:2px dashed var(--ink);font-size:13px;font-weight:700'] : ['목록에 없는 도메인이에요 · 학생에게 "아직 눈치밥이 없어요" 화면이 보여요', 'margin-top:8px;padding:8px 10px;border:2px solid var(--red);color:var(--red);font-size:13px;font-weight:700'];
+    var auto = [['학교', esc(s.schoolName) + ' · ' + esc(s.region), '나이스 학교정보'], ['전교생', s.students + '명 (학년별 ' + s.perGrade.join(' · ') + ')', '학교알리미'], ['급식 메뉴', '매일 자동 연동 · 오늘 ' + esc(s.menu.name) + ' (인기 ' + s.menu.pop + '/10)', '나이스 급식식단'], ['학사일정', '체육대회 11/7 · 기말고사 12/9~12', '나이스 학사일정'], ['4교시 종료', '1·2학년 ' + s.endTimes['1'] + ' · 3학년 ' + s.endTimes['3'], '나이스 시간표']].map(function (r, i) { return '<div class="row stag" style="--i:' + i + '"><span style="display:flex;flex-direction:column"><span style="font-size:12px;color:var(--grey)">' + r[0] + '</span><b style="font-size:14px">' + r[1] + '</b></span><span style="font-size:11px;font-weight:700;padding:3px 8px;border:2px solid var(--ink);white-space:nowrap">' + r[2] + '</span></div>'; }).join('');
+    var modes = [['수거', '휴대폰 수거 학교', '등교 전 예약 · 하교 후 피드백'], ['자유', '휴대폰 자유 학교', '점심 직전까지 예약']].map(function (m) { var o = s.mode === m[0]; return '<button class="btn" data-act="set" data-key="mode" data-arg="' + m[0] + '" aria-pressed="' + o + '" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border:0;text-align:left;font-size:13px;' + (o ? 'background:var(--ink);color:var(--white)' : 'background:var(--white)') + '"><b>' + m[1] + '</b><span style="font-size:11px;font-weight:500">' + m[2] + '</span></button>'; }).join('');
+    var req = S.requests.length ? '<div class="card"><div class="ch"><b>도입 요청</b><span style="font-size:12px;color:var(--grey)">학생 앱에서 들어온 요청</span></div>' + S.requests.slice(-5).map(function (r, i) { return '<div class="row stag" style="--i:' + i + '"><span class="mono">' + esc(r.domain) + '</span><span style="font-size:12px;color:var(--grey)">' + new Date(r.at).toLocaleString('ko-KR') + '</span></div>'; }).join('') + '</div>' : '';
+    return '<section class="screen">' + title('01 · SETUP', '학교 설정', '학교를 검색하면 공공데이터로 채워져요. 직접 입력은 이메일 도메인과 급식 정보뿐이에요', '<span style="padding:6px 10px;border:2px solid var(--ink);background:var(--white);font-size:12px;font-weight:700">' + (s.savedAt ? '마지막 저장 ' + new Date(s.savedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '아직 저장 안 함') + '</span>') +
+      '<div class="grid2" style="margin-top:22px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))"><div style="display:flex;flex-direction:column;gap:20px"><div class="card"><div class="ch"><b>학생 가입 이메일 도메인</b><span style="font-size:12px;color:var(--grey)">이 주소로 끝나는 메일만 가입돼요</span></div><div style="border-bottom:2px solid var(--ink)">' + doms + '</div><div style="padding:14px 16px;display:flex;gap:8px;align-items:flex-end"><label class="field" style="flex:1">도메인 추가 (예: 교직원 메일)<input id="newDomain" class="input mono" type="text" value="' + esc(ui.newDomain) + '" placeholder="masong.go.kr" data-bind="newDomain" style="min-height:44px"></label><button class="primary btn" data-act="addDomain" style="min-height:44px">추가</button></div><div style="margin:0 16px 16px;padding:12px;background:var(--paper);border:2px dashed var(--ink)"><label class="field">학생 이메일로 가입 테스트<input id="testEmail" class="input mono" type="email" value="' + esc(ui.testEmail) + '" data-bind="testEmail"></label><div class="pop" style="' + test[1] + '">' + test[0] + '</div></div></div>' + req + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:20px"><div class="card"><div class="ch"><b>공공데이터에서 자동으로 채운 값</b></div>' + auto + '</div><div class="card"><div class="ch"><b>급식 정보 (직접 입력)</b></div><div style="padding:14px 16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px"><label class="field">배식 라인<input id="lines" class="input mono" type="text" inputmode="numeric" value="' + s.lines + '" data-bind="lines" style="font-size:15px"></label><label class="field">점심 시작<input id="lunchStart" class="input mono" type="text" value="' + esc(ui.lunchStart != null ? ui.lunchStart : s.lunchStart) + '" data-bind="lunchStart" style="font-size:15px"></label><label class="field">점심 끝<input id="lunchEnd" class="input mono" type="text" value="' + esc(ui.lunchEnd != null ? ui.lunchEnd : s.lunchEnd) + '" data-bind="lunchEnd" style="font-size:15px"></label></div><div style="padding:0 16px 16px"><div style="font-size:12px;font-weight:700;color:#333;margin-bottom:6px">휴대폰 정책</div><div role="group" aria-label="휴대폰 정책" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:2px solid var(--ink)">' + modes + '</div></div><div style="padding:0 16px 16px"><button class="primary btn" data-act="save">저장</button></div></div>' +
+      '<div class="postit" style="--r:-1.5deg;--d:300ms;padding:18px 18px 14px;font-size:13px;line-height:1.6"><span class="tape"></span><b style="font-size:14px">배식 속도는 입력하지 않아요</b><br>기본값 1분에 6.2명으로 시작해서, 학생 하교 후 피드백으로 우리 학교 속도를 스스로 찾아요. 지금 <b class="mono">' + s.mu + '명/분/라인</b>' + (s.muHistory && s.muHistory.length ? ' · 보정 ' + s.muHistory.length + '회' : '') + '</div></div></div>' +
+      '<div style="margin-top:28px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="secondary btn" data-act="resetAll">시연 데이터 초기화</button><span style="font-size:12px;color:var(--grey)">학생 앱 가입, 예약, 피드백, 설정이 모두 기본값으로 돌아가요</span></div></section>';
+  }
+  function vDash() {
+    var s = S.settings, t = NB.targetDate(), rows = NB.queue(t), cap = NB.capacity(), mx = Math.max(70, cap + 10);
+    var sumRes = 0, peak = rows[0], maxWait = 0; rows.forEach(function (r) { sumRes += r.arrivals; if (r.arrivals > peak.arrivals) peak = r; if (r.wait > maxWait) maxWait = r.wait; });
+    rows.forEach(function (r) { if (r.pred > mx) mx = r.pred + 5; });
+    var pi = rows.indexOf(peak), peakEnd = rows[Math.min(rows.length - 1, pi + 1)];
+    var teams = Math.round(sumRes / 3.6);
+    var accepted = S.recLog.filter(function (r) { return r.accepted; }).length, sent = S.recLog.length;
+    var fbRate = S.feedback.length ? Math.round(S.feedback.length / Math.max(1, S.feedback.length) * 64) : 0;
+    var kp = [['예약 완료', sumRes + '명', teams + '팀 · 전교생 ' + Math.round(sumRes / s.students * 100) + '%'], ['예상 피크', peak.time + '~' + peakEnd.time.slice(3), '정원 대비 ' + Math.round(peak.pred / cap * 100) + '%'], ['예상 최대 대기', maxWait + '분', '정원 ' + cap + '명/칸'], ['배식 속도', s.mu, '명/분/라인 · ' + (s.muHistory && s.muHistory.length ? '어제 ' + s.muHistory[s.muHistory.length - 1].from : '기본값')]].map(function (k, i) { return '<div class="kpi stag" style="--i:' + i + '"><div class="l">' + k[0] + '</div><div class="v">' + k[1] + '</div><div class="s">' + k[2] + '</div></div>'; }).join('');
+    var chart = rows.map(function (r, i) { return '<div style="height:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px"><span class="grow" style="--i:' + i + ';display:block;width:40%;height:' + Math.round(r.arrivals / mx * 100) + '%;background:var(--ink)" title="예약 ' + r.arrivals + '"></span><span class="grow" style="--i:' + i + ';display:block;width:40%;height:' + Math.round(r.pred / mx * 100) + '%;border:2px solid var(--ink);border-bottom:0;background:var(--stripe)" title="예측 ' + r.pred + '"></span></div>'; }).join('');
+    var labels = rows.map(function (r) { return '<span class="mono" style="text-align:center;font-size:11px;font-weight:600">' + r.time.slice(3) + '</span>'; }).join('');
+    var n = rows.length;
+    var recRows = [['추천 보낸 팀', sent + '팀'], ['수락한 팀', accepted + '팀' + (sent ? ' (' + Math.round(accepted / sent * 100) + '%)' : '')], ['대기 명단', Object.keys(S.waitlist).length + '건'], ['피드백 응답', S.feedback.length + (NBSync.active ? '건' : '건 (이 기기)')]].map(function (r, i) { return '<div class="row stag" style="--i:' + i + '"><span style="color:#444">' + r[0] + '</span><b>' + r[1] + '</b></div>'; }).join('');
+    var book = S.user ? NB.currentBooking(t) : null;
+    return '<section class="screen">' + title('02 · TODAY', (NB.isToday(t) ? '오늘' : '내일') + ' 대시보드', NB.fmtDateKo(t) + ' · ' + esc(s.menu.name) + ' (인기 ' + s.menu.pop + '/10) · ' + s.deadline + ' 예약 마감, 08:00 예측 확정 · 예측 엔진: ' + esc(NB.engineLabel())) +
+      '<div class="kpis" style="margin-top:20px">' + kp + '</div>' +
+      '<div class="dashgrid" style="margin-top:20px"><div class="card" style="padding:16px 18px"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline"><b style="font-size:15px">슬롯별 예약 인원과 AI 예측</b><span style="display:flex;gap:14px;font-size:12px;color:#333;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--ink)"></span>예약</span><span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border:2px solid var(--ink);background:var(--stripe)"></span>AI 예측 (예약 안 한 학생 포함)</span><span style="display:flex;align-items:center;gap:5px"><span style="width:16px;border-top:2px dashed var(--red)"></span>정원 ' + cap + '명</span></span></div>' +
+      '<div style="position:relative;margin-top:16px;height:220px;display:grid;grid-template-columns:repeat(' + n + ',minmax(0,1fr));gap:8px;align-items:end;border-bottom:2px solid var(--ink)"><div aria-hidden="true" style="position:absolute;left:-6px;right:-6px;bottom:' + Math.min(100, Math.round(cap / mx * 100)) + '%;border-top:2px dashed var(--red)"></div>' + chart + '</div><div style="display:grid;grid-template-columns:repeat(' + n + ',minmax(0,1fr));gap:8px;margin-top:6px">' + labels + '</div>' + (book ? '<div style="margin-top:10px;font-size:12px;color:var(--grey)">학생 앱의 우리 팀 예약: <b class="mono">' + book.slot + '</b> (' + esc(book.kind) + ', ' + book.teamSize + '명)이 포함돼 있어요</div>' : '<div style="margin-top:10px;font-size:12px;color:var(--grey)">학생 앱에서 예약하면 여기에 바로 더해져요</div>') + '</div>' +
+      '<div class="dashside"><div class="postit" style="--r:1.5deg;--d:250ms;padding:18px 16px 14px"><span class="tape"></span><div style="display:flex;gap:12px;align-items:flex-start">' + bowlShock + '<div><b style="font-size:15px">피크 예고 ' + peak.time + '~' + peakEnd.time + '</b><div style="font-size:13px;line-height:1.55;margin-top:4px">약 ' + (peak.pred + peakEnd.pred) + '명이 몰릴 예정이에요. ' + s.lunchStart + '부터 ' + (s.lines === 1 ? '라인' : s.lines + '라인 모두') + ' 배식 준비를 권해요.</div></div></div></div><div class="card"><div class="ch"><b style="font-size:14px">추천 결과 (' + (NBSync.active ? '전체 학생 앱' : '이 기기의 학생 앱') + ' 기준)</b></div>' + recRows + '</div></div></div></section>';
+  }
+  function vBoard() {
+    var t = NB.targetDate(), nowT = ui.now || NB.nowHHMM(), nowM = NB.mins(nowT);
+    var classes = ['2학년 1반', '2학년 3반', '2학년 5반'];
+    if (S.user) { var mine = S.user.grade + '학년 ' + S.user.cls + '반'; if (classes.indexOf(mine) < 0) classes.push(mine); }
+    var rows = NB.classBoard(t, ui.boardClass).map(function (r, i) { var d = NB.mins(r[0]) - nowM; var go = d >= -4 && d <= 0, past = d < -4; return '<div class="brow stag ' + (go ? 'go' : past ? 'past' : '') + '" style="--i:' + i + '"><span style="display:flex;align-items:center;gap:18px;flex-wrap:wrap"><span class="mono t" style="font-size:26px;font-weight:600">' + r[0] + '</span><span class="tm" style="font-size:18px;font-weight:700">' + esc(r[1]) + (r[2] ? ' <span style="font-size:12px;padding:2px 6px;border:2px solid var(--ink)">학생 앱 예약</span>' : '') + '</span></span><span class="chip">' + (go ? '지금 가세요 →' : past ? '다녀왔어요' : d + '분 뒤') + '</span></div>'; }).join('');
+    if (!rows) rows = '<div class="brow">이 반은 아직 예약이 없어요</div>';
+    var ct = classes.map(function (c) { return '<button class="btn" data-act="boardClass" data-arg="' + c + '" aria-pressed="' + (ui.boardClass === c) + '">' + c + '</button>'; }).join('');
+    var nt = ['지금'].concat(NB.slots().filter(function (x, i) { return i % 2 === 0; })).map(function (x) { var v = x === '지금' ? '' : x; return '<button class="btn mono" data-act="now" data-arg="' + v + '" aria-pressed="' + ((ui.now || '') === v) + '">' + x + '</button>'; }).join('');
+    return '<section class="screen">' + title('03 · CLASSROOM', '교실 배정표', '교실 전자칠판에 띄우는 화면이에요. 지금 시각에 맞춰 갈 팀이 바뀌어요', '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="accent btn" data-act="kiosk">전자칠판 모드로 열기</button><button class="secondary btn" data-act="copyKiosk">전자칠판 링크 복사</button></div>') +
+      '<div class="controls" style="margin-top:18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center"><span style="font-size:12px;font-weight:700">반</span><div class="segrow" role="group" aria-label="반 선택">' + ct + '</div><span style="font-size:12px;font-weight:700;margin-left:8px">미리보기 시각</span><div class="segrow" role="group" aria-label="미리보기 시각">' + nt + '</div></div>' +
+      '<div class="board" style="margin-top:18px"><div class="bh"><span style="display:flex;align-items:center;gap:12px"><svg width="46" height="20" viewBox="0 0 150 66" aria-hidden="true"><g fill="#111" stroke="#FFF" stroke-width="7"><rect x="4" y="4" width="28" height="29"/><rect x="32" y="4" width="29" height="29" fill="#FFF"/><rect x="61" y="4" width="29" height="29" fill="#FFF"/><rect x="90" y="4" width="29" height="29"/><rect x="119" y="4" width="27" height="29"/><rect x="4" y="33" width="28" height="29"/><rect x="32" y="33" width="29" height="29"/><rect x="61" y="33" width="29" height="29"/><rect x="90" y="33" width="29" height="29" fill="#FFE14D"/><rect x="119" y="33" width="27" height="29"/></g></svg><b style="font-size:20px">' + esc(ui.boardClass) + ' · ' + NB.fmtDateKo(t) + '</b></span><span class="mono" style="font-size:22px;font-weight:600">NOW ' + nowT + '</span></div>' + rows + '</div>' + (ui.kiosk ? '<div style="padding:16px 32px;font-size:13px;color:var(--grey)"><a href="#board" data-act="unkiosk" style="color:inherit">← 관리자 화면으로</a></div>' : '') + '</section>';
+  }
+  function vRules() {
+    var s = S.settings, cap = NB.capacity();
+    var msgPreview = s.msg === '숫자형' ? '12:35에 가면 대기 약 2분 (9분 덜 기다려요)' : s.msg === '신호등형' ? '12:20 꽉 참 → 12:35 여유' : '12:35로 옮기면 포인트 +10';
+    return '<section class="screen">' + title('04 · RULES', '운영 규칙', '바꾸면 다음 예약부터 바로 적용돼요', '<button class="primary btn" data-act="save">저장</button>') +
+      '<div class="grid2" style="margin-top:20px"><div class="card"><div class="ch"><b>슬롯과 정원</b></div><div style="padding:14px 16px;display:flex;flex-direction:column;gap:14px">' + seg('슬롯 길이', 'slotLen', [5, 10], function (v) { return v + '분'; }, 'mono') + seg('안전계수 (여유를 얼마나 둘지)', 'factor', [0.8, 0.85, 0.9], function (v) { return Number(v).toFixed(2); }, 'mono') + '<div class="pop" style="padding:12px 14px;background:var(--paper);border:2px solid var(--ink)"><div style="font-size:12px;color:#444">계산된 슬롯 정원</div><div class="mono" style="font-size:18px;font-weight:600;margin-top:2px">' + s.mu + ' × ' + s.lines + ' × ' + s.slotLen + ' × ' + s.factor.toFixed(2) + ' = ' + cap + '명</div></div></div></div>' +
+      '<div class="card"><div class="ch"><b>예약</b></div><div style="padding:14px 16px;display:flex;flex-direction:column;gap:14px">' + seg('당일 예약 마감 (휴대폰 수거 전)', 'deadline', ['07:00', '07:30', '08:00'], null, 'mono') + seg('정기 예약에 쓰는 자리', 'ratio', [0.6, 0.7, 0.8], function (v) { return Math.round(v * 100) + '%'; }, 'mono') + '</div><div style="border-top:2px solid var(--ink)">' + tg('penalty', '예약 안 지킨 팀 순위 낮추기', '다음 달 정기 예약 우선순위만 낮아져요') + tg('waitlist', '꽉 찬 시간 대기 명단', '자리가 나면 ' + s.deadline + ' 전에 알려줘요') + tg('examPause', '시험·행사 날 자동 쉬기', '학사일정과 연동돼요') + '</div></div>' +
+      '<div style="display:flex;flex-direction:column;gap:20px"><div class="card"><div class="ch"><b>추천 메시지와 포인트</b></div><div style="padding:14px 16px"><div style="font-size:12px;font-weight:700;color:#333;margin-bottom:6px">추천 메시지 형태 (파일럿 결과로 정해요)</div><div class="seg" role="group" aria-label="추천 메시지 형태" style="grid-template-columns:repeat(3,minmax(0,1fr))">' + ['숫자형', '신호등형', '보상형'].map(function (m) { return '<button class="btn" data-act="set" data-key="msg" data-arg="' + m + '" aria-pressed="' + (s.msg === m) + '">' + m + '</button>'; }).join('') + '</div></div></div><div class="postit" style="--r:-2deg;--d:150ms;padding:18px 16px 14px"><span class="tape"></span><div style="font-size:11px;font-weight:700">학생에게 보이는 추천 미리보기</div><div style="font-size:15px;font-weight:900;margin-top:6px">' + msgPreview + '</div></div></div></div></section>';
+  }
+  function vReport() {
+    var s = S.settings, fb = S.feedback;
+    var avg = fb.length ? (fb.reduce(function (a, f) { return a + f.wait; }, 0) / fb.length).toFixed(1) : null;
+    var kp = [['평균 대기', avg != null ? avg + '분' : '4.1분', avg != null ? (NBSync.active ? '학생 피드백 ' : '이 기기 피드백 ') + fb.length + '건' : '시뮬레이션 예시 · 도입 전 9.6분'], ['피크 대기', '7분', '시뮬레이션 예시 · 도입 전 16분'], ['추천 수락', S.recLog.length ? Math.round(S.recLog.filter(function (r) { return r.accepted; }).length / S.recLog.length * 100) + '%' : '71%', S.recLog.length ? (NBSync.active ? '추천 ' : '이 기기 ') + S.recLog.length + '건' : '시뮬레이션 예시'], ['1인당 1년 절약', '약 17시간', '50분 수업 약 21교시 · 시뮬레이션']].map(function (k, i) { return '<div class="kpi stag" style="--i:' + i + '"><div class="l">' + k[0] + '</div><div class="v">' + k[1] + '</div><div class="s">' + k[2] + '</div></div>'; }).join('');
+    var wk = [['9/1주', 10.2, 9.8], ['9/2주', 9.4, 7.1], ['9/3주', 9.9, 5.6], ['9/4주', 9.6, 4.8], ['10/1주', 10.1, 4.3], ['10/2주', 9.3, 4.0], ['10/3주', 9.7, 4.1]];
+    var bars = wk.map(function (w, i) { return '<div style="height:100%;display:flex;align-items:flex-end;justify-content:center;gap:4px"><span class="grow" style="--i:' + i + ';display:block;width:36%;height:' + Math.round(w[1] / 12 * 100) + '%;border:2px solid var(--ink);border-bottom:0;background:var(--stripe)"></span><span class="grow" style="--i:' + i + ';display:block;width:36%;height:' + Math.round(w[2] / 12 * 100) + '%;background:var(--ink)"></span></div>'; }).join('');
+    var lbl = wk.map(function (w) { return '<span style="text-align:center;font-size:11px;font-weight:700">' + w[0] + '</span>'; }).join('');
+    var mh = (s.muHistory || []);
+    var ops = [['예약 이행률', '89% (예시)'], ['피드백 응답률', '64% (예시)'], ['정기 예약 팀', '62% (예시)'], ['급식 안 먹음 응답', fb.length ? Math.round(fb.filter(function (f) { return f.ate === '아니오'; }).length / fb.length * 100) + '%' : '3.1% (예시)'], ['배식 속도 자동 보정', mh.length ? mh.length + '회 · 지금 ' + s.mu + '명/분' : '아직 피드백 없음']].map(function (r, i) { return '<div class="row stag" style="--i:' + i + '"><span style="color:#444">' + r[0] + '</span><b>' + r[1] + '</b></div>'; }).join('');
+    var muRows = mh.length ? '<div class="card" style="margin-top:20px"><div class="ch"><b style="font-size:14px">배식 속도 보정 기록 (μ오늘 = 0.8·μ어제 + 0.2·μ추정)</b></div>' + mh.slice(-7).map(function (m, i) { return '<div class="row stag" style="--i:' + i + '"><span class="mono">' + m.date + '</span><b class="mono">' + m.from + ' → ' + m.to + '</b></div>'; }).join('') + '</div>' : '';
+    return '<section class="screen">' + title('05 · REPORT', '리포트', '도입 전후 비교 · 학교와 교육청 제출용 (예시로 표시된 숫자는 시뮬레이션이에요)', '<button class="accent btn" data-act="toast" data-arg="PDF 내보내기는 최종 발표 버전에서 붙여요">교육청 월간 리포트 PDF</button>') +
+      '<div class="kpis" style="margin-top:20px">' + kp + '</div><div class="grid2" style="margin-top:20px"><div class="card" style="padding:16px 18px;grid-column:1/-1"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px"><b style="font-size:15px">주간 평균 대기시간 (분) · 시뮬레이션 예시</b><span style="display:flex;gap:14px;font-size:12px;color:#333"><span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border:2px solid var(--ink);background:var(--stripe)"></span>도입 전</span><span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--ink)"></span>도입 후</span></span></div><div style="margin-top:16px;height:200px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;align-items:end;border-bottom:2px solid var(--ink)">' + bars + '</div><div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;margin-top:6px">' + lbl + '</div></div><div><div class="card"><div class="ch"><b style="font-size:14px">운영 지표</b></div>' + ops + '</div>' + muRows + '</div></div></section>';
+  }
+
+  var views = { setup: vSetup, dash: vDash, board: vBoard, rules: vRules, report: vReport };
+  var main = document.getElementById('main'), menu = document.getElementById('menu'), wrap = document.getElementById('wrap');
+  function render() {
+    S = NB.load();
+    var focusId = document.activeElement && document.activeElement.id, selStart = null;
+    try { if (focusId && document.activeElement.selectionStart != null) selStart = document.activeElement.selectionStart; } catch (e) { /* 무시 */ }
+    menu.innerHTML = (NBSync.active ? TABS.concat([['ai', '06', 'AI 엔진'], ['sim', '07', '시뮬레이션']]) : TABS).map(function (t) { return '<button class="btn' + (t[0] === 'ai' || t[0] === 'sim' ? ' ext' : '') + '" data-act="' + (t[0] === 'ai' || t[0] === 'sim' ? 'nav' : 'tab') + '" data-arg="' + (t[0] === 'sim' ? 'ai' : t[0]) + '" aria-current="' + (ui.tab === t[0] ? 'page' : 'false') + '"><span class="mono" style="font-size:12px;font-weight:600;opacity:.7">' + t[1] + '</span><span>' + t[2] + '</span></button>'; }).join('');
+    document.getElementById('schoolLine').textContent = S.settings.schoolName + ' · 영양교사';
+    document.getElementById('sideFoot').innerHTML = '운영 모드 <b style="color:var(--yellow)">' + (S.settings.mode === '수거' ? '휴대폰 수거' : '휴대폰 자유') + '</b><br>배식 속도 ' + S.settings.mu + '명/분/라인 (자동 보정 중)<br>정원 ' + NB.capacity() + '명 / ' + S.settings.slotLen + '분';
+    wrap.classList.toggle('kiosk', ui.kiosk);
+    if (NBSync.active && !NBSync.ready) { main.innerHTML = '<p class="mono" style="color:var(--grey)">불러오는 중…</p>'; return; }
+    main.innerHTML = '<div class="main-in">' + views[ui.tab]() + '</div>' + (ui.toast ? '<div class="toast" role="status">' + esc(ui.toast) + '</div>' : '');
+    if (focusId) { var el = document.getElementById(focusId); if (el) { el.focus(); try { if (selStart != null) el.setSelectionRange(selStart, selStart); } catch (e) { /* 무시 */ } } }
+  }
+  function toast(m) { ui.toast = m; render(); clearTimeout(toast.t); toast.t = setTimeout(function () { ui.toast = null; render(); }, 2400); }
+  document.addEventListener('input', function (e) {
+    var b = e.target.getAttribute('data-bind'); if (!b) return;
+    var v = e.target.value;
+    if (b === 'lines') { v = v.replace(/[^0-9]/g, '').slice(0, 1); S.settings.lines = parseInt(v, 10) || 1; NB.save(); e.target.value = v; render(); return; }
+    if (b === 'lunchStart' || b === 'lunchEnd') { if (/^\d{2}:\d{2}$/.test(v)) { S.settings[b] = v; NB.save(); } ui[b] = v; render(); return; }
+    ui[b] = v; render();
+  });
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]'); if (!el) return;
+    var act = el.getAttribute('data-act'), arg = el.getAttribute('data-arg');
+    switch (act) {
+      case 'tab': ui.tab = arg; ui.kiosk = false; try { history.replaceState(null, '', '#' + arg); } catch (x) { /* 무시 */ } render(); main.scrollTop = 0; break;
+      case 'toggle': S.settings[arg] = !S.settings[arg]; NB.save(); render(); break;
+      case 'set': { var k = el.getAttribute('data-key'); var v = arg; if (['slotLen', 'factor', 'ratio'].indexOf(k) >= 0) v = Number(v); S.settings[k] = v; NB.save(); render(); break; }
+      case 'save': S.settings.savedAt = new Date().toISOString(); NB.save(); toast('저장했어요. 학생 앱의 혼잡 계산에 바로 반영돼요'); break;
+      case 'addDomain': { var n = (ui.newDomain || '').trim().toLowerCase().replace(/^@/, ''); if (!n || n.indexOf('.') < 0) { toast('도메인 형식을 확인해 주세요 (예: masong.go.kr)'); break; } if (S.settings.domains.some(function (d) { return d.name === n; })) { toast('이미 있는 도메인이에요'); break; } S.settings.domains.push({ name: n, ok: false }); ui.newDomain = ''; NB.save(); render(); break; }
+      case 'verify': S.settings.domains[+arg].ok = true; NB.save(); toast('학교 목록과 대조했어요 · 인증됨'); break;
+      case 'removeDomain': S.settings.domains.splice(+arg, 1); NB.save(); render(); break;
+      case 'boardClass': ui.boardClass = arg; render(); break;
+      case 'now': ui.now = arg || null; render(); break;
+      case 'kiosk': ui.kiosk = true; ui.tab = 'board'; try { history.replaceState(null, '', '#kiosk'); } catch (x) { /* 무시 */ } render(); break;
+      case 'nav': NBSync.nav(arg); break;
+      case 'toStudent': if (NBSync.active) NBSync.nav('student'); else location.href = 'index.html'; break;
+      case 'unkiosk': e.preventDefault(); if (ui.boardPage) { NBSync.nav('admin'); break; } ui.kiosk = false; try { history.replaceState(null, '', '#board'); } catch (x) { /* 무시 */ } render(); break;
+      case 'copyKiosk': { var url = location.href.split('#')[0] + '#kiosk'; if (NBSync.active) { var base = ''; try { base = window.top.location.origin; } catch (x) { try { base = new URL(document.referrer).origin; } catch (y) { base = ''; } } url = base + '/' + encodeURIComponent('교실_배정표'); } try { navigator.clipboard.writeText(url).then(function () { toast('전자칠판 링크를 복사했어요'); }, function () { toast(url); }); } catch (x) { toast(url); } break; }
+      case 'toast': toast(arg); break;
+      case 'resetAll': if (el.getAttribute('data-sure') === '1') { NB.reset(); ui.newDomain = ''; toast('시연 데이터를 초기화했어요'); } else { el.setAttribute('data-sure', '1'); el.textContent = '정말 초기화할까요? 한 번 더 누르기'; } break;
+    }
+  });
+  window.addEventListener('storage', function (e) { if (!NBSync.active && e.key === NB.KEY) { NB.reload(); render(); } });
+  window.addEventListener('hashchange', function () { var x = (location.hash || '').replace('#', ''); if (x === 'kiosk') { ui.kiosk = true; ui.tab = 'board'; } else if (TABS.some(function (t) { return t[0] === x; })) { ui.kiosk = false; ui.tab = x; } render(); });
+  NBSync.init(function (first, args) {
+    if (first && args && args.view === 'board') { ui.kiosk = true; ui.tab = 'board'; ui.boardPage = true; }
+    render();
+  });
+  render();
+  setInterval(function () { if (ui.tab === 'board' && !ui.now) render(); }, 30000);
+})();
+</script>
+</body>
+</html>
