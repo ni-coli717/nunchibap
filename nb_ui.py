@@ -10,6 +10,7 @@ CSS = """
 <style>
 :root{--paper:#F4F3EF;--ink:#111111;--yellow:#FFE14D;--grey:#555555;--red:#B42318}
 html,body,[class*="st-"]{font-family:'Noto Sans KR',Arial,sans-serif}
+[data-testid="stIconMaterial"],.material-symbols-rounded,span[class*="material-symbols"]{font-family:'Material Symbols Rounded'!important}
 .stApp{background:#F4F3EF;color:#111111}
 .block-container{padding-top:1.2rem;padding-bottom:3rem;max-width:860px}
 section[data-testid="stSidebar"]{background:#111111;color:#FFFFFF}
