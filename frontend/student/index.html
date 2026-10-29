@@ -458,7 +458,7 @@ html,body,#root{height:100%}
   window.addEventListener('storage', function (e) { if (!NBSync.active && e.key === NB.KEY) { NB.reload(); render(); } });
   NBSync.init(function (first) {
     S = NB.load();
-    if (first && S.user && S.user.introDone && ['splash', 'email', 'code', 'profile', 'nope'].indexOf(ui.screen) >= 0) ui.screen = 'home';
+    if (first && S.user && ['splash', 'email', 'code', 'profile', 'nope'].indexOf(ui.screen) >= 0) ui.screen = 'home';
     render();
   });
   render();
