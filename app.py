@@ -260,13 +260,13 @@ def v_reserve() -> None:
                 ui.postit(f'<span class="mono" style="font-size:22px;font-weight:600">{r["time"]}</span> &nbsp; <b>{r["tag"]} · 대기 {r["wait"]}분</b> · {max(0, p["wait"] - r["wait"])}분 덜 기다림 · +{r["pt"]}P', rot=rot, block=True)
                 if st.button(f"{r['time']}로 바꿀래요", key=f"rec_{r['time']}", type="primary", use_container_width=True):
                     nb.book(S, t, r["time"], "추천 수락")
-                    S["recLog"].append({"date": nb.date_key(t), "from": p["time"], "to": r["time"], "accepted": True})
+                    S["recLog"].append({"date": nb.date_key(t), "from": p["time"], "to": r["time"], "accepted": True, "pa": r.get("pa")})
                     S["user"]["points"] = S["user"].get("points", 0) + r["pt"]
                     nb.save(S)
                     go("confirm")
             if st.button(f"그래도 {p['time']} 대기 명단에 올리기", use_container_width=True):
                 S["waitlist"][nb.date_key(t)] = p["time"]
-                S["recLog"].append({"date": nb.date_key(t), "from": p["time"], "to": None, "accepted": False})
+                S["recLog"].append({"date": nb.date_key(t), "from": p["time"], "to": None, "accepted": False, "pa": recs[0].get("pa") if recs else None})
                 nb.save(S)
                 ss.picked, ss.rec = None, False
                 st.success(f"{p['time']} 대기 명단에 올렸어요. 자리가 나면 {s['deadline']} 전에 알려 줄게요.")

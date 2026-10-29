@@ -113,3 +113,24 @@ def kpis(items: list[tuple]) -> None:
 def rows_card(title: str, rows: list[tuple]) -> None:
     body = "".join(f'<div class="nb-row"><span style="color:#444">{e(k)}</span><b>{e(v)}</b></div>' for k, v in rows)
     st.markdown(f'<div class="nb-card"><b style="font-size:14px">{e(title)}</b><div style="margin-top:6px">{body}</div></div>', unsafe_allow_html=True)
+
+
+def hbars(title: str, items: list[tuple], unit: str = "", note: str = "", hi: int | None = None, cap: float | None = None, label_w: int = 64) -> None:
+    """가로 막대 (슬라이드 12장 스타일). items = [(라벨, 값)]. hi번째까지 노랑, cap을 넘으면 검정, 음수는 빗금."""
+    mx = max([abs(v) for _, v in items] + [cap or 0, 1e-9])
+    rows = []
+    for i, (lab, v) in enumerate(items):
+        over = cap is not None and v > cap
+        bg = "#111111" if over else ("repeating-linear-gradient(135deg,#FFFFFF 0px,#FFFFFF 5px,#9A9A96 5px,#9A9A96 6.5px)" if v < 0 else ("#FFE14D" if hi is not None and i < hi else "#FFFFFF"))
+        w = max(1.5, abs(v) / mx * 100)
+        rows.append(f'<div style="display:grid;grid-template-columns:{label_w}px 1fr 56px;align-items:center;gap:8px;margin:4px 0">'
+                    f'<span class="mono" style="font-size:12px;font-weight:600">{e(lab)}</span>'
+                    f'<span style="position:relative;height:16px"><i style="position:absolute;left:0;top:0;bottom:0;width:{w:.1f}%;background:{bg};border:2px solid #111111"></i>'
+                    + (f'<i style="position:absolute;top:-3px;bottom:-3px;left:{cap / mx * 100:.1f}%;border-left:2px dashed #B42318"></i>' if cap else "")
+                    + f'</span><span class="mono" style="font-size:12px;font-weight:600;text-align:right">{v:g}{e(unit)}</span></div>')
+    st.markdown(f'<div class="nb-card"><b style="font-size:14px">{e(title)}</b>{"<div class=nb-note>" + e(note) + "</div>" if note else ""}<div style="margin-top:8px">{"".join(rows)}</div></div>', unsafe_allow_html=True)
+
+
+def stages(cur: int, items: list[tuple]) -> None:
+    cells = "".join(f'<div class="{"on" if i == cur else ""}" style="padding:12px 14px"><span class="mono" style="font-size:11px">{e(a)}</span><br><b style="font-size:15px">{e(b)}</b><br><span style="font-weight:500">{e(c)}</span></div>' for i, (a, b, c) in enumerate(items))
+    st.markdown(f'<div class="nb-steps">{cells}</div>', unsafe_allow_html=True)

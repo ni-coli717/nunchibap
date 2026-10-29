@@ -34,6 +34,8 @@ def defaults() -> dict:
             "students": 612, "perGrade": [208, 204, 200],
             "endTimes": {"1": "12:10", "2": "12:10", "3": "12:05"},
             "menu": {"name": "치킨마요덮밥", "pop": 9},
+            "weather": "맑음", "event": False,
+            "aiWeeks": 8, "aiMode": "자동", "responseRate": 0.64,
             "savedAt": None,
         },
         "user": None,
@@ -155,6 +157,39 @@ def team_count(st: dict) -> int:
     return max(1, n)
 
 
+def predict(st: dict, d: date, arrivals: list[int]) -> list[int]:
+    """AI ① 칸별 유입 인원 (예약 안 한 학생 포함). 데이터가 부족하거나 AI가 기본 통계보다 못하면 계산으로 돌린다."""
+    s = st["settings"]
+    try:
+        import nb_ai
+        preds, _ = nb_ai.predict_day(arrivals, d.weekday(), int(s["menu"].get("pop", 7)), s.get("weather", "맑음"),
+                                     bool(s.get("event")), s["endTimes"], int(s.get("aiWeeks", 8)), s.get("aiMode", "자동"))
+        return preds
+    except Exception:  # scikit-learn이 없어도 앱은 돌아가야 한다
+        return [round(a * 1.08 + (2 if i < 5 else 1)) for i, a in enumerate(arrivals)]
+
+
+def engine_label(st: dict) -> str:
+    s = st["settings"]
+    try:
+        import nb_ai
+        am, _ = nb_ai.engine(int(s.get("aiWeeks", 8)))
+        on = s.get("aiMode") == "AI" or (s.get("aiMode", "자동") == "자동" and am.use_ai)
+        return "AI 예측" if on and am.model is not None else "계산 예측"
+    except Exception:
+        return "계산 예측"
+
+
+def accept_prob(st: dict, saved: float, shift: float, team: int) -> float | None:
+    """AI ② 추천 수락 확률."""
+    try:
+        import nb_ai
+        _, acc = nb_ai.engine(int(st["settings"].get("aiWeeks", 8)))
+        return acc.prob(saved, shift, team, st["settings"].get("msg", "숫자형"))
+    except Exception:
+        return None
+
+
 def queue(st: dict, d: date, booking: dict | None | str = "auto") -> list[dict]:
     """슬롯별 유입과 대기행렬 계산. wait = (누적 대기 + 이 칸 도착) ÷ 분당 처리."""
     s = st["settings"]
@@ -162,10 +197,12 @@ def queue(st: dict, d: date, booking: dict | None | str = "auto") -> list[dict]:
     mine = st["bookings"].get(date_key(d)) if booking == "auto" else booking
     ts = team_count(st)
     rate = s["mu"] * s["lines"]
+    arr = [demand[i] + (ts if mine and mine.get("slot") == t else 0) for i, t in enumerate(sl)]
+    preds = predict(st, d, arr)
     carry, rows = 0.0, []
     for i, t in enumerate(sl):
-        arrivals = demand[i] + (ts if mine and mine.get("slot") == t else 0)
-        pred = round(arrivals * 1.08 + (2 if i < 5 else 1))
+        arrivals = arr[i]
+        pred = preds[i]
         in_queue = carry + pred
         wait = max(0, round(in_queue / rate))
         served = min(in_queue, rate * s["slotLen"])
@@ -191,8 +228,10 @@ def recommend(st: dict, d: date, picked: str) -> list[dict]:
     cands = [r for r in rows if r["time"] != picked and r["left"] >= ts and r["kind"] != "b"]
     cands.sort(key=lambda r: r["wait"] * 2 + abs(mins(r["time"]) - pm) / 5)
     out = []
+    pw = next((r["wait"] for r in rows if r["time"] == picked), 0)
     for i, r in enumerate(cands[:3]):
-        out.append({"time": r["time"], "wait": r["wait"], "left": r["left"],
+        pa = accept_prob(st, max(0, pw - r["wait"]), abs(mins(r["time"]) - pm), ts)
+        out.append({"time": r["time"], "wait": r["wait"], "left": r["left"], "pa": pa,
                     "tag": "추천" if i == 0 else ("여유" if r["kind"] == "f" else "보통"), "pt": 10 if i == 0 else 5})
     return out
 
