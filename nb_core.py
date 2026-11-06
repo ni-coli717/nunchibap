@@ -52,11 +52,27 @@ def defaults() -> dict:
 
 
 # ---------- 저장 ----------
+RESET_FILE = Path(__file__).parent / "RESET"  # 이 파일 내용이 바뀌면 시연 데이터를 처음 상태로 되돌린다
+
+
+def reset_stamp() -> str:
+    try:
+        return RESET_FILE.read_text(encoding="utf-8").strip()
+    except Exception:
+        return ""
+
+
 def load() -> dict:
     with _LOCK:
         try:
             if DATA_FILE.exists():
                 st = json.loads(DATA_FILE.read_text(encoding="utf-8"))
+                stamp = reset_stamp()
+                if stamp and st.get("_resetStamp") != stamp:  # 초기화 요청 → 기본 상태로
+                    st = defaults()
+                    st["_resetStamp"] = stamp
+                    DATA_FILE.write_text(json.dumps(st, ensure_ascii=False), encoding="utf-8")
+                    return st
                 d = defaults()
                 for k, v in d.items():
                     st.setdefault(k, v)
@@ -65,7 +81,9 @@ def load() -> dict:
                 return st
         except Exception:
             pass
-        return defaults()
+        st = defaults()
+        st["_resetStamp"] = reset_stamp()
+        return st
 
 
 def save(st: dict) -> None:
