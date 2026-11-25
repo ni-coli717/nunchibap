@@ -1,0 +1,130 @@
+{
+ "n_train": 610,
+ "n_test": 200,
+ "n_measured": 90,
+ "train_days": 61,
+ "results": {
+  "기본 통계": {
+   "mae_fb": 18.9,
+   "mae_true": 19.14,
+   "mae_measured": 26.97,
+   "wait_mae_min": 3.91,
+   "signal_acc": 0.565,
+   "peak_mae": 18.49,
+   "gain_vs_base": 0.0
+  },
+  "선형회귀": {
+   "mae_fb": 10.85,
+   "mae_true": 10.61,
+   "mae_measured": 17.69,
+   "wait_mae_min": 1.21,
+   "signal_acc": 0.79,
+   "peak_mae": 15.27,
+   "gain_vs_base": 0.446
+  },
+  "랜덤포레스트": {
+   "mae_fb": 10.88,
+   "mae_true": 10.64,
+   "mae_measured": 15.53,
+   "wait_mae_min": 1.92,
+   "signal_acc": 0.79,
+   "peak_mae": 16.46,
+   "gain_vs_base": 0.444
+  },
+  "XGBoost": {
+   "mae_fb": 10.65,
+   "mae_true": 10.43,
+   "mae_measured": 12.99,
+   "wait_mae_min": 2.62,
+   "signal_acc": 0.805,
+   "peak_mae": 12.97,
+   "gain_vs_base": 0.455
+  }
+ },
+ "importance": [
+  [
+   "지난주 같은 칸 인원",
+   0.3143
+  ],
+  [
+   "5분 칸",
+   0.2932
+  ],
+  [
+   "정기 예약 인원",
+   0.1535
+  ],
+  [
+   "시험 날",
+   0.0445
+  ],
+  [
+   "칸 예약 인원",
+   0.0395
+  ],
+  [
+   "앞 칸 예약",
+   0.0391
+  ],
+  [
+   "학사일정(시험·행사)",
+   0.0376
+  ],
+  [
+   "앱 사용률",
+   0.0158
+  ],
+  [
+   "비",
+   0.0116
+  ],
+  [
+   "뒤 칸 예약",
+   0.0112
+  ],
+  [
+   "메뉴 인기도",
+   0.011
+  ],
+  [
+   "폭염",
+   0.01
+  ],
+  [
+   "요일",
+   0.0099
+  ],
+  [
+   "4교시 끝난 학년 수",
+   0.0088
+  ]
+ ],
+ "use_ai": true,
+ "features": [
+  "wd",
+  "slot",
+  "reserved",
+  "recurring",
+  "reserved_prev",
+  "reserved_next",
+  "menu_pop",
+  "rain",
+  "hot",
+  "event",
+  "exam",
+  "grades_out",
+  "last_week",
+  "adopt"
+ ],
+ "selected": "XGBoost",
+ "selection_mae": {
+  "기본 통계": 17.55,
+  "선형회귀": 11.58,
+  "랜덤포레스트": 11.07,
+  "XGBoost": 10.96
+ },
+ "base_coef": [
+  1.461,
+  19.98
+ ]
+}

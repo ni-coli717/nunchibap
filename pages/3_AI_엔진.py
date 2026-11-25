@@ -33,8 +33,8 @@ import pandas as pd  # noqa: E402
 
 st.markdown("<style>.block-container{max-width:1280px!important}</style>", unsafe_allow_html=True)
 n1, n2, _ = st.columns([1, 1, 4])
-n1.page_link("pages/1_관리자.py", label="← 관리자 웹")
-n2.page_link("app.py", label="학생 앱")
+n1.markdown('<a href="관리자" target="_self" style="font-weight:700">← 관리자 웹</a>', unsafe_allow_html=True)
+n2.markdown('<a href="./" target="_self" style="font-weight:700">학생 앱</a>', unsafe_allow_html=True)
 tab_ai, tab_sim = st.tabs(["06 AI 엔진", "07 시뮬레이션"])
 
 with tab_ai:

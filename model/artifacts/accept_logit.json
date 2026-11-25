@@ -1,0 +1,23 @@
+{
+ "features": [
+  "saved_min",
+  "shift_min",
+  "points",
+  "menu_pop",
+  "team_size",
+  "team_past_rate",
+  "msg_신호등형",
+  "msg_보상형"
+ ],
+ "coef": [
+  0.2522,
+  -0.0665,
+  0.2702,
+  -0.1433,
+  0.016,
+  3.4384,
+  -0.0914,
+  0.4374
+ ],
+ "intercept": -1.6258
+}
